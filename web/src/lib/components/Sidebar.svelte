@@ -1,0 +1,332 @@
+<script lang="ts">
+	import { activities, type Activity } from '$lib/stores/activities';
+	import { settings } from '$lib/stores/settings';
+	import { TrendingUp, TrendingDown, Clock, Target, Calendar } from '@lucide/svelte';
+
+	interface ROIBreakdown {
+		High: number;
+		Neutral: number;
+		Waste: number;
+	}
+
+	const netTimeWorth = $derived.by(() => {
+		let total = 0;
+		const hourlyRate = $settings.hourlyWorth;
+
+		for (const activity of $activities) {
+			const duration = getDuration(activity);
+			const multiplier = getMultiplier(activity.roi);
+			total += duration * hourlyRate * multiplier;
+		}
+
+		return total;
+	});
+
+	const roiBreakdown = $derived.by(() => {
+		const breakdown: ROIBreakdown = { High: 0, Neutral: 0, Waste: 0 };
+
+		for (const activity of $activities) {
+			const duration = getDuration(activity);
+			breakdown[activity.roi] += duration;
+		}
+
+		return breakdown;
+	});
+
+	const totalHours = $derived(roiBreakdown.High + roiBreakdown.Neutral + roiBreakdown.Waste);
+
+	// Calendar data - static mock data for visualization
+	const currentDate = new Date();
+	const currentMonth = currentDate.getMonth();
+	const currentYear = currentDate.getFullYear();
+	const monthName = currentDate.toLocaleDateString('en-US', { month: 'long' });
+
+	// Get first day of month (0 = Sunday, 1 = Monday, etc.)
+	const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+	const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+	// Mock data: status for each day (green = positive, red = negative, gray = neutral/no data)
+	const mockDayStatus: Record<number, 'positive' | 'negative' | 'neutral'> = {
+		1: 'positive', 2: 'positive', 3: 'negative', 4: 'positive', 5: 'neutral',
+		6: 'neutral', 7: 'neutral', 8: 'positive', 9: 'positive', 10: 'negative',
+		11: 'positive', 12: 'positive', 13: 'neutral', 14: 'neutral', 15: 'positive',
+		16: 'negative', 17: 'positive', 18: 'positive', 19: 'positive', 20: 'neutral',
+		21: 'neutral', 22: 'positive', 23: 'negative', 24: 'positive', 25: 'positive',
+		26: 'neutral', 27: 'neutral', 28: 'positive', 29: 'positive', 30: 'positive'
+	};
+
+	// Build calendar grid
+	const calendarDays: Array<{ day: number | null; status: string | null; isToday?: boolean }> = [];
+	// Add empty cells for days before month starts
+	for (let i = 0; i < firstDayOfMonth; i++) {
+		calendarDays.push({ day: null, status: null });
+	}
+	// Add days of the month
+	for (let day = 1; day <= daysInMonth; day++) {
+		calendarDays.push({
+			day,
+			status: mockDayStatus[day] || 'neutral',
+			isToday: day === currentDate.getDate()
+		});
+	}
+
+	// Weekly view - last 7 days
+	const weekDays: Array<{ dayOfWeek: string; dayNum: number; status: string; isToday: boolean }> = [];
+	const today = currentDate.getDate();
+	for (let i = 6; i >= 0; i--) {
+		const dayNum = today - i;
+		const date = new Date(currentYear, currentMonth, dayNum);
+		weekDays.push({
+			dayOfWeek: date.toLocaleDateString('en-US', { weekday: 'short' }),
+			dayNum: date.getDate(),
+			status: mockDayStatus[date.getDate()] || 'neutral',
+			isToday: i === 0
+		});
+	}
+
+	function getDuration(activity: Activity): number {
+		const start = timeToMinutes(activity.startTime);
+		const end = timeToMinutes(activity.endTime);
+		return (end - start) / 60;
+	}
+
+	function timeToMinutes(time: string): number {
+		const [h, m] = time.split(':').map(Number);
+		return h * 60 + m;
+	}
+
+	function getMultiplier(roi: Activity['roi']): number {
+		switch (roi) {
+			case 'High':
+				return 1.0;
+			case 'Neutral':
+				return 0.0;
+			case 'Waste':
+				return -1.0;
+		}
+	}
+
+	function getPercentage(hours: number): number {
+		return totalHours > 0 ? (hours / totalHours) * 100 : 0;
+	}
+
+	function getDayColor(status: string | null) {
+		switch (status) {
+			case 'positive':
+				return 'bg-emerald-500 hover:bg-emerald-600';
+			case 'negative':
+				return 'bg-red-500 hover:bg-red-600';
+			case 'neutral':
+			default:
+				return 'bg-slate-300 hover:bg-slate-400';
+		}
+	}
+</script>
+
+<div class="flex h-full flex-col gap-4 overflow-y-auto rounded-xl bg-gradient-to-br from-card to-accent/20 p-6">
+	<!-- Net Time Worth - Hero Card -->
+	<div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 text-white shadow-lg {netTimeWorth < 0 ? 'from-red-500 to-red-600' : ''}">
+		<div class="relative z-10">
+			<div class="mb-2 flex items-center gap-2">
+				{#if netTimeWorth >= 0}
+					<TrendingUp size={20} class="animate-bounce" />
+				{:else}
+					<TrendingDown size={20} class="animate-bounce" />
+				{/if}
+				<span class="text-sm font-medium uppercase tracking-wide opacity-90">Net Time Worth</span>
+			</div>
+			<p class="text-5xl font-black tracking-tight">
+				${netTimeWorth >= 0 ? '+' : ''}{Math.abs(netTimeWorth).toFixed(0)}
+			</p>
+			<p class="mt-2 text-sm opacity-80">
+				@ ${$settings.hourlyWorth}/hr · {totalHours.toFixed(1)}h tracked
+			</p>
+		</div>
+		<!-- Decorative background element -->
+		<div class="absolute -right-4 -top-4 h-32 w-32 rounded-full bg-white/10"></div>
+		<div class="absolute -bottom-6 -left-6 h-40 w-40 rounded-full bg-white/5"></div>
+	</div>
+
+	<!-- ROI Breakdown Cards Grid -->
+	<div class="grid grid-cols-3 gap-3">
+		<!-- High ROI -->
+		<div class="group relative overflow-hidden rounded-xl bg-emerald-500/10 p-4 transition-all hover:scale-105 hover:bg-emerald-500/20">
+			<div class="absolute right-2 top-2 h-8 w-8 rounded-full bg-emerald-500/20"></div>
+			<Target size={18} class="mb-2 text-emerald-600" />
+			<p class="text-2xl font-bold text-emerald-700">{roiBreakdown.High.toFixed(1)}</p>
+			<p class="text-xs font-medium text-emerald-600">High ROI</p>
+			<div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-emerald-200">
+				<div
+					class="h-full bg-emerald-600 transition-all"
+					style="width: {getPercentage(roiBreakdown.High)}%"
+				></div>
+			</div>
+		</div>
+
+		<!-- Neutral -->
+		<div class="group relative overflow-hidden rounded-xl bg-slate-500/10 p-4 transition-all hover:scale-105 hover:bg-slate-500/20">
+			<div class="absolute right-2 top-2 h-8 w-8 rounded-full bg-slate-500/20"></div>
+			<Clock size={18} class="mb-2 text-slate-600" />
+			<p class="text-2xl font-bold text-slate-700">{roiBreakdown.Neutral.toFixed(1)}</p>
+			<p class="text-xs font-medium text-slate-600">Neutral</p>
+			<div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+				<div
+					class="h-full bg-slate-600 transition-all"
+					style="width: {getPercentage(roiBreakdown.Neutral)}%"
+				></div>
+			</div>
+		</div>
+
+		<!-- Waste -->
+		<div class="group relative overflow-hidden rounded-xl bg-red-500/10 p-4 transition-all hover:scale-105 hover:bg-red-500/20">
+			<div class="absolute right-2 top-2 h-8 w-8 rounded-full bg-red-500/20"></div>
+			<TrendingDown size={18} class="mb-2 text-red-600" />
+			<p class="text-2xl font-bold text-red-700">{roiBreakdown.Waste.toFixed(1)}</p>
+			<p class="text-xs font-medium text-red-600">Waste</p>
+			<div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-red-200">
+				<div
+					class="h-full bg-red-600 transition-all"
+					style="width: {getPercentage(roiBreakdown.Waste)}%"
+				></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Visual Bar -->
+	<div class="relative overflow-hidden rounded-xl bg-muted p-4">
+		<p class="mb-3 text-sm font-bold uppercase tracking-wide text-foreground">Distribution</p>
+		<div class="h-12 overflow-hidden rounded-lg shadow-inner">
+			{#if totalHours > 0}
+				<div class="flex h-full">
+					{#if roiBreakdown.High > 0}
+						<div
+							class="bg-gradient-to-b from-emerald-400 to-emerald-600 transition-all hover:opacity-80"
+							style="width: {getPercentage(roiBreakdown.High)}%"
+							title="High: {roiBreakdown.High.toFixed(1)}h"
+						></div>
+					{/if}
+					{#if roiBreakdown.Neutral > 0}
+						<div
+							class="bg-gradient-to-b from-slate-300 to-slate-500 transition-all hover:opacity-80"
+							style="width: {getPercentage(roiBreakdown.Neutral)}%"
+							title="Neutral: {roiBreakdown.Neutral.toFixed(1)}h"
+						></div>
+					{/if}
+					{#if roiBreakdown.Waste > 0}
+						<div
+							class="bg-gradient-to-b from-red-400 to-red-600 transition-all hover:opacity-80"
+							style="width: {getPercentage(roiBreakdown.Waste)}%"
+							title="Waste: {roiBreakdown.Waste.toFixed(1)}h"
+						></div>
+					{/if}
+				</div>
+			{:else}
+				<div class="flex h-full items-center justify-center bg-muted">
+					<p class="text-sm text-muted-foreground">No data</p>
+				</div>
+			{/if}
+		</div>
+	</div>
+
+	<!-- Weekly Performance -->
+	<div class="rounded-xl bg-white p-5 shadow-md">
+		<div class="mb-4 flex items-center gap-2">
+			<TrendingUp size={18} class="text-slate-600" />
+			<h3 class="text-sm font-bold uppercase tracking-wide text-slate-700">This Week</h3>
+		</div>
+
+		<!-- Week grid -->
+		<div class="grid grid-cols-7 gap-2">
+			{#each weekDays as { dayOfWeek, dayNum, status, isToday }}
+				<div class="flex flex-col items-center gap-2">
+					<span class="text-xs font-bold {isToday ? 'text-blue-600' : 'text-slate-500'}">{dayOfWeek}</span>
+					<button
+						class="relative aspect-square w-full rounded-xl transition-all {getDayColor(status)} {isToday ? 'ring-4 ring-blue-500 shadow-lg shadow-blue-500/50 scale-110' : 'shadow-md'}"
+						title="{dayOfWeek} {dayNum} - {status === 'positive' ? 'Positive' : status === 'negative' ? 'Negative' : 'Neutral'}"
+					>
+						<span class="flex h-full items-center justify-center text-sm font-bold text-white">
+							{dayNum}
+						</span>
+					</button>
+				</div>
+			{/each}
+		</div>
+	</div>
+
+	<!-- Monthly Calendar Heatmap -->
+	<div class="rounded-xl bg-white p-5 shadow-md">
+		<div class="mb-4 flex items-center justify-between">
+			<div class="flex items-center gap-2">
+				<Calendar size={18} class="text-slate-600" />
+				<h3 class="text-sm font-bold uppercase tracking-wide text-slate-700">{monthName} {currentYear}</h3>
+			</div>
+		</div>
+
+		<!-- Day labels -->
+		<div class="mb-2 grid grid-cols-7 gap-1">
+			{#each ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as dayLabel}
+				<div class="text-center text-xs font-bold text-slate-500">{dayLabel}</div>
+			{/each}
+		</div>
+
+		<!-- Calendar grid -->
+		<div class="grid grid-cols-7 gap-1">
+			{#each calendarDays as { day, status, isToday }}
+				{#if day === null}
+					<div class="aspect-square"></div>
+				{:else}
+					<button
+						class="group relative aspect-square rounded-lg transition-all {getDayColor(status)} {isToday ? 'ring-3 ring-blue-500 shadow-md shadow-blue-500/40 scale-105' : 'shadow-sm'}"
+						title="{day} - {status === 'positive' ? 'Positive Net Worth' : status === 'negative' ? 'Negative Net Worth' : 'No Data'}"
+					>
+						<span class="flex h-full items-center justify-center text-xs font-bold text-white {isToday ? 'scale-110' : ''}">
+							{day}
+						</span>
+					</button>
+				{/if}
+			{/each}
+		</div>
+
+		<!-- Legend -->
+		<div class="mt-4 flex items-center justify-center gap-4 text-xs">
+			<div class="flex items-center gap-1.5">
+				<div class="h-3 w-3 rounded bg-emerald-500"></div>
+				<span class="font-medium text-slate-600">Positive</span>
+			</div>
+			<div class="flex items-center gap-1.5">
+				<div class="h-3 w-3 rounded bg-slate-300"></div>
+				<span class="font-medium text-slate-600">Neutral</span>
+			</div>
+			<div class="flex items-center gap-1.5">
+				<div class="h-3 w-3 rounded bg-red-500"></div>
+				<span class="font-medium text-slate-600">Negative</span>
+			</div>
+		</div>
+	</div>
+
+	<!-- Insights -->
+	{#if totalHours > 0}
+		<div class="space-y-2 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 p-4">
+			<p class="text-xs font-bold uppercase tracking-wide text-primary">AI Insights</p>
+			{#if netTimeWorth >= 0}
+				<p class="text-sm font-medium leading-relaxed text-foreground">
+					🎯 Strong performance! You're generating <span class="font-bold text-emerald-600">+${netTimeWorth.toFixed(0)}</span> in time value today.
+				</p>
+			{:else}
+				<p class="text-sm font-medium leading-relaxed text-foreground">
+					⚠️ You're currently <span class="font-bold text-red-600">${Math.abs(netTimeWorth).toFixed(0)}</span> in the negative. Consider optimizing your schedule.
+				</p>
+			{/if}
+			{#if roiBreakdown.Waste > 0}
+				<p class="text-sm leading-relaxed text-muted-foreground">
+					Reclaim <span class="font-semibold text-red-600">{roiBreakdown.Waste.toFixed(1)}h</span> of wasted time to boost your ROI.
+				</p>
+			{/if}
+		</div>
+	{:else}
+		<div class="rounded-xl border-2 border-dashed border-border p-6 text-center">
+			<Clock size={32} class="mx-auto mb-2 text-muted-foreground opacity-50" />
+			<p class="text-sm font-medium text-muted-foreground">Start tracking to see insights</p>
+		</div>
+	{/if}
+</div>
