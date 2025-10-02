@@ -9,11 +9,23 @@
 		badge?: string;
 	}
 
+	interface Props {
+		onNavigate?: () => void;
+	}
+
+	let { onNavigate }: Props = $props();
+
 	const navItems: NavItem[] = [
 		{ label: 'Today', icon: Calendar, href: '/', active: true },
 		{ label: 'Analytics', icon: BarChart3, href: '/analytics', active: false, badge: 'Soon' },
 		{ label: 'Settings', icon: Settings, href: '/settings', active: false }
 	];
+
+	function handleNavClick() {
+		if (onNavigate) {
+			onNavigate();
+		}
+	}
 </script>
 
 <aside class="flex h-screen w-72 flex-col bg-gradient-to-b from-slate-950 to-slate-900 text-white">
@@ -39,6 +51,7 @@
 		{#each navItems as item}
 			<a
 				href={item.href}
+				onclick={handleNavClick}
 				class="group relative flex items-center gap-4 rounded-xl px-4 py-3.5 text-base font-semibold transition-all {item.active
 					? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30'
 					: 'text-slate-400 hover:bg-white/5 hover:text-white'}"
