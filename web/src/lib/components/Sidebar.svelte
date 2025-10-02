@@ -47,12 +47,36 @@
 
 	// Mock data: status for each day (green = positive, red = negative, gray = neutral/no data)
 	const mockDayStatus: Record<number, 'positive' | 'negative' | 'neutral'> = {
-		1: 'positive', 2: 'positive', 3: 'negative', 4: 'positive', 5: 'neutral',
-		6: 'neutral', 7: 'neutral', 8: 'positive', 9: 'positive', 10: 'negative',
-		11: 'positive', 12: 'positive', 13: 'neutral', 14: 'neutral', 15: 'positive',
-		16: 'negative', 17: 'positive', 18: 'positive', 19: 'positive', 20: 'neutral',
-		21: 'neutral', 22: 'positive', 23: 'negative', 24: 'positive', 25: 'positive',
-		26: 'neutral', 27: 'neutral', 28: 'positive', 29: 'positive', 30: 'positive'
+		1: 'positive',
+		2: 'positive',
+		3: 'negative',
+		4: 'positive',
+		5: 'neutral',
+		6: 'neutral',
+		7: 'neutral',
+		8: 'positive',
+		9: 'positive',
+		10: 'negative',
+		11: 'positive',
+		12: 'positive',
+		13: 'neutral',
+		14: 'neutral',
+		15: 'positive',
+		16: 'negative',
+		17: 'positive',
+		18: 'positive',
+		19: 'positive',
+		20: 'neutral',
+		21: 'neutral',
+		22: 'positive',
+		23: 'negative',
+		24: 'positive',
+		25: 'positive',
+		26: 'neutral',
+		27: 'neutral',
+		28: 'positive',
+		29: 'positive',
+		30: 'positive'
 	};
 
 	// Build calendar grid
@@ -71,7 +95,8 @@
 	}
 
 	// Weekly view - last 7 days
-	const weekDays: Array<{ dayOfWeek: string; dayNum: number; status: string; isToday: boolean }> = [];
+	const weekDays: Array<{ dayOfWeek: string; dayNum: number; status: string; isToday: boolean }> =
+		[];
 	const today = currentDate.getDate();
 	for (let i = 6; i >= 0; i--) {
 		const dayNum = today - i;
@@ -123,9 +148,16 @@
 	}
 </script>
 
-<div class="flex h-full flex-col gap-4 overflow-y-auto rounded-xl bg-gradient-to-br from-card to-accent/20 p-6">
+<div
+	class="from-card to-accent/20 flex h-full flex-col gap-4 overflow-y-auto rounded-xl bg-gradient-to-br px-1"
+>
 	<!-- Net Time Worth - Hero Card -->
-	<div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 text-white shadow-lg {netTimeWorth < 0 ? 'from-red-500 to-red-600' : ''}">
+	<div
+		class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 text-white shadow-lg {netTimeWorth <
+		0
+			? 'from-red-500 to-red-600'
+			: ''}"
+	>
 		<div class="relative z-10">
 			<div class="mb-2 flex items-center gap-2">
 				{#if netTimeWorth >= 0}
@@ -150,7 +182,9 @@
 	<!-- ROI Breakdown Cards Grid -->
 	<div class="grid grid-cols-3 gap-3">
 		<!-- High ROI -->
-		<div class="group relative overflow-hidden rounded-xl bg-emerald-500/10 p-4 transition-all hover:scale-105 hover:bg-emerald-500/20">
+		<div
+			class="group relative overflow-hidden rounded-xl bg-emerald-500/10 p-4 transition-all hover:scale-105 hover:bg-emerald-500/20"
+		>
 			<div class="absolute right-2 top-2 h-8 w-8 rounded-full bg-emerald-500/20"></div>
 			<Target size={18} class="mb-2 text-emerald-600" />
 			<p class="text-2xl font-bold text-emerald-700">{roiBreakdown.High.toFixed(1)}</p>
@@ -164,7 +198,9 @@
 		</div>
 
 		<!-- Neutral -->
-		<div class="group relative overflow-hidden rounded-xl bg-slate-500/10 p-4 transition-all hover:scale-105 hover:bg-slate-500/20">
+		<div
+			class="group relative overflow-hidden rounded-xl bg-slate-500/10 p-4 transition-all hover:scale-105 hover:bg-slate-500/20"
+		>
 			<div class="absolute right-2 top-2 h-8 w-8 rounded-full bg-slate-500/20"></div>
 			<Clock size={18} class="mb-2 text-slate-600" />
 			<p class="text-2xl font-bold text-slate-700">{roiBreakdown.Neutral.toFixed(1)}</p>
@@ -178,7 +214,9 @@
 		</div>
 
 		<!-- Waste -->
-		<div class="group relative overflow-hidden rounded-xl bg-red-500/10 p-4 transition-all hover:scale-105 hover:bg-red-500/20">
+		<div
+			class="group relative overflow-hidden rounded-xl bg-red-500/10 p-4 transition-all hover:scale-105 hover:bg-red-500/20"
+		>
 			<div class="absolute right-2 top-2 h-8 w-8 rounded-full bg-red-500/20"></div>
 			<TrendingDown size={18} class="mb-2 text-red-600" />
 			<p class="text-2xl font-bold text-red-700">{roiBreakdown.Waste.toFixed(1)}</p>
@@ -193,8 +231,8 @@
 	</div>
 
 	<!-- Visual Bar -->
-	<div class="relative overflow-hidden rounded-xl bg-muted p-4">
-		<p class="mb-3 text-sm font-bold uppercase tracking-wide text-foreground">Distribution</p>
+	<div class="bg-muted relative overflow-hidden rounded-xl p-4">
+		<p class="text-foreground mb-3 text-sm font-bold uppercase tracking-wide">Distribution</p>
 		<div class="h-12 overflow-hidden rounded-lg shadow-inner">
 			{#if totalHours > 0}
 				<div class="flex h-full">
@@ -221,8 +259,8 @@
 					{/if}
 				</div>
 			{:else}
-				<div class="flex h-full items-center justify-center bg-muted">
-					<p class="text-sm text-muted-foreground">No data</p>
+				<div class="bg-muted flex h-full items-center justify-center">
+					<p class="text-muted-foreground text-sm">No data</p>
 				</div>
 			{/if}
 		</div>
@@ -239,10 +277,20 @@
 		<div class="grid grid-cols-7 gap-2">
 			{#each weekDays as { dayOfWeek, dayNum, status, isToday }}
 				<div class="flex flex-col items-center gap-2">
-					<span class="text-xs font-bold {isToday ? 'text-blue-600' : 'text-slate-500'}">{dayOfWeek}</span>
+					<span class="text-xs font-bold {isToday ? 'text-blue-600' : 'text-slate-500'}"
+						>{dayOfWeek}</span
+					>
 					<button
-						class="relative aspect-square w-full rounded-xl transition-all {getDayColor(status)} {isToday ? 'ring-4 ring-blue-500 shadow-lg shadow-blue-500/50 scale-110' : 'shadow-md'}"
-						title="{dayOfWeek} {dayNum} - {status === 'positive' ? 'Positive' : status === 'negative' ? 'Negative' : 'Neutral'}"
+						class="relative aspect-square w-full rounded-xl transition-all {getDayColor(
+							status
+						)} {isToday
+							? 'scale-110 shadow-lg shadow-blue-500/50 ring-4 ring-blue-500'
+							: 'shadow-md'}"
+						title="{dayOfWeek} {dayNum} - {status === 'positive'
+							? 'Positive'
+							: status === 'negative'
+								? 'Negative'
+								: 'Neutral'}"
 					>
 						<span class="flex h-full items-center justify-center text-sm font-bold text-white">
 							{dayNum}
@@ -258,7 +306,10 @@
 		<div class="mb-4 flex items-center justify-between">
 			<div class="flex items-center gap-2">
 				<Calendar size={18} class="text-slate-600" />
-				<h3 class="text-sm font-bold uppercase tracking-wide text-slate-700">{monthName} {currentYear}</h3>
+				<h3 class="text-sm font-bold uppercase tracking-wide text-slate-700">
+					{monthName}
+					{currentYear}
+				</h3>
 			</div>
 		</div>
 
@@ -276,10 +327,22 @@
 					<div class="aspect-square"></div>
 				{:else}
 					<button
-						class="group relative aspect-square rounded-lg transition-all {getDayColor(status)} {isToday ? 'ring-3 ring-blue-500 shadow-md shadow-blue-500/40 scale-105' : 'shadow-sm'}"
-						title="{day} - {status === 'positive' ? 'Positive Net Worth' : status === 'negative' ? 'Negative Net Worth' : 'No Data'}"
+						class="group relative aspect-square rounded-lg transition-all {getDayColor(
+							status
+						)} {isToday
+							? 'ring-3 scale-105 shadow-md shadow-blue-500/40 ring-blue-500'
+							: 'shadow-sm'}"
+						title="{day} - {status === 'positive'
+							? 'Positive Net Worth'
+							: status === 'negative'
+								? 'Negative Net Worth'
+								: 'No Data'}"
 					>
-						<span class="flex h-full items-center justify-center text-xs font-bold text-white {isToday ? 'scale-110' : ''}">
+						<span
+							class="flex h-full items-center justify-center text-xs font-bold text-white {isToday
+								? 'scale-110'
+								: ''}"
+						>
 							{day}
 						</span>
 					</button>
@@ -306,27 +369,32 @@
 
 	<!-- Insights -->
 	{#if totalHours > 0}
-		<div class="space-y-2 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 p-4">
-			<p class="text-xs font-bold uppercase tracking-wide text-primary">AI Insights</p>
+		<div class="from-primary/5 to-primary/10 space-y-2 rounded-xl bg-gradient-to-br p-4">
+			<p class="text-primary text-xs font-bold uppercase tracking-wide">AI Insights</p>
 			{#if netTimeWorth >= 0}
-				<p class="text-sm font-medium leading-relaxed text-foreground">
-					🎯 Strong performance! You're generating <span class="font-bold text-emerald-600">+${netTimeWorth.toFixed(0)}</span> in time value today.
+				<p class="text-foreground text-sm font-medium leading-relaxed">
+					🎯 Strong performance! You're generating <span class="font-bold text-emerald-600"
+						>+${netTimeWorth.toFixed(0)}</span
+					> in time value today.
 				</p>
 			{:else}
-				<p class="text-sm font-medium leading-relaxed text-foreground">
-					⚠️ You're currently <span class="font-bold text-red-600">${Math.abs(netTimeWorth).toFixed(0)}</span> in the negative. Consider optimizing your schedule.
+				<p class="text-foreground text-sm font-medium leading-relaxed">
+					⚠️ You're currently <span class="font-bold text-red-600"
+						>${Math.abs(netTimeWorth).toFixed(0)}</span
+					> in the negative. Consider optimizing your schedule.
 				</p>
 			{/if}
 			{#if roiBreakdown.Waste > 0}
-				<p class="text-sm leading-relaxed text-muted-foreground">
-					Reclaim <span class="font-semibold text-red-600">{roiBreakdown.Waste.toFixed(1)}h</span> of wasted time to boost your ROI.
+				<p class="text-muted-foreground text-sm leading-relaxed">
+					Reclaim <span class="font-semibold text-red-600">{roiBreakdown.Waste.toFixed(1)}h</span> of
+					wasted time to boost your ROI.
 				</p>
 			{/if}
 		</div>
 	{:else}
-		<div class="rounded-xl border-2 border-dashed border-border p-6 text-center">
-			<Clock size={32} class="mx-auto mb-2 text-muted-foreground opacity-50" />
-			<p class="text-sm font-medium text-muted-foreground">Start tracking to see insights</p>
+		<div class="border-border rounded-xl border-2 border-dashed p-6 text-center">
+			<Clock size={32} class="text-muted-foreground mx-auto mb-2 opacity-50" />
+			<p class="text-muted-foreground text-sm font-medium">Start tracking to see insights</p>
 		</div>
 	{/if}
 </div>
