@@ -2,7 +2,7 @@
 	import Timeline from '$lib/components/Timeline.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import ActivityModal from '$lib/components/ActivityModal.svelte';
-	import { Plus, Search, Bell, Calendar } from '@lucide/svelte';
+	import { Plus } from '@lucide/svelte';
 	import type { Activity } from '$lib/stores/activities';
 
 	let selectedActivity = $state<Activity | null>(null);
@@ -47,27 +47,13 @@
 			</div>
 
 			<!-- Right: Actions -->
-			<div class="flex items-center gap-3">
-				<!-- Search -->
-				<button class="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-600 shadow-sm transition-all hover:scale-105 hover:bg-slate-50 hover:text-slate-900">
-					<Search size={20} />
-				</button>
-
-				<!-- Notifications -->
-				<button class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-600 shadow-sm transition-all hover:scale-105 hover:bg-slate-50 hover:text-slate-900">
-					<Bell size={20} />
-					<span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">3</span>
-				</button>
-
-				<!-- Add Activity Button -->
-				<button
-					onclick={() => handleAddActivity(9)}
-					class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 py-2.5 font-bold text-white shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 hover:shadow-xl"
-				>
-					<Plus size={20} />
-					<span class="hidden sm:inline">New Activity</span>
-				</button>
-			</div>
+			<button
+				onclick={() => handleAddActivity(9)}
+				class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 py-2.5 font-bold text-white shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 hover:shadow-xl"
+			>
+				<Plus size={20} />
+				<span class="hidden sm:inline">New Activity</span>
+			</button>
 		</div>
 	</header>
 
