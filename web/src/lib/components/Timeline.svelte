@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { activities, type Activity } from '$lib/stores/activities';
 	import { Plus, Clock } from '@lucide/svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	interface Props {
 		onActivityClick: (activity: Activity) => void;
@@ -10,6 +11,29 @@
 	let { onActivityClick, onAddActivity }: Props = $props();
 
 	const hours = Array.from({ length: 24 }, (_, i) => i);
+	let currentTimePosition = $state(0);
+	let intervalId: number;
+
+	function updateCurrentTime() {
+		const now = new Date();
+		const hours = now.getHours();
+		const minutes = now.getMinutes();
+		const totalMinutes = hours * 60 + minutes;
+		// Calculate position as percentage of the day (2400px total height)
+		currentTimePosition = (totalMinutes / (24 * 60)) * 2400;
+	}
+
+	onMount(() => {
+		updateCurrentTime();
+		// Update every minute
+		intervalId = setInterval(updateCurrentTime, 60000) as unknown as number;
+	});
+
+	onDestroy(() => {
+		if (intervalId) {
+			clearInterval(intervalId);
+		}
+	});
 
 	function timeToMinutes(time: string): number {
 		const [h, m] = time.split(':').map(Number);
@@ -76,6 +100,17 @@
 
 	<div class="relative flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 to-white">
 		<div class="relative min-h-[2400px]">
+			<!-- Current Time Indicator -->
+			<div
+				class="absolute left-0 right-0 z-30 flex items-center"
+				style="top: {currentTimePosition}px"
+			>
+				<div class="flex h-3 w-3 items-center justify-center rounded-full bg-red-500 shadow-lg">
+					<div class="h-1.5 w-1.5 rounded-full bg-white"></div>
+				</div>
+				<div class="h-0.5 flex-1 bg-red-500 shadow-sm"></div>
+			</div>
+
 			<!-- Hour grid -->
 			{#each hours as hour}
 				<div
