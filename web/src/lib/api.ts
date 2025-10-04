@@ -18,6 +18,14 @@ export interface MeResponse {
 	picture: string;
 }
 
+export interface HourlyWorthResponse {
+	hourlyWorth: number;
+}
+
+export interface UpdateHourlyWorthRequest {
+	hourlyWorth: number;
+}
+
 class ApiClient {
 	private baseUrl: string;
 
@@ -86,6 +94,37 @@ class ApiClient {
 		}
 
 		localStorage.removeItem('session_token');
+	}
+
+	async getHourlyWorth(): Promise<number> {
+		const response = await fetch(`${this.baseUrl}/api/settings/hourly-worth`, {
+			method: 'GET',
+			headers: this.getHeaders(),
+			credentials: 'include'
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to get hourly worth');
+		}
+
+		const data: HourlyWorthResponse = await response.json();
+		return data.hourlyWorth;
+	}
+
+	async updateHourlyWorth(hourlyWorth: number): Promise<number> {
+		const response = await fetch(`${this.baseUrl}/api/settings/hourly-worth`, {
+			method: 'PUT',
+			headers: this.getHeaders(),
+			credentials: 'include',
+			body: JSON.stringify({ hourlyWorth })
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to update hourly worth');
+		}
+
+		const data: HourlyWorthResponse = await response.json();
+		return data.hourlyWorth;
 	}
 }
 

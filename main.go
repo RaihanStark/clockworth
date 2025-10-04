@@ -48,6 +48,7 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(queries, googleOAuth, cfg)
+	settingsHandler := handlers.NewSettingsHandler(queries)
 
 	// Setup Echo
 	e := echo.New()
@@ -72,6 +73,10 @@ func main() {
 	protected.Use(auth.AuthMiddleware(queries))
 	protected.GET("/me", authHandler.Me)
 	protected.POST("/logout", authHandler.Logout)
+	
+	// Settings routes
+	protected.GET("/settings/hourly-worth", settingsHandler.GetHourlyWorth)
+	protected.PUT("/settings/hourly-worth", settingsHandler.UpdateHourlyWorth)
 
 	// Start server
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", cfg.Port)))

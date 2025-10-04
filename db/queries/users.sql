@@ -17,3 +17,12 @@ UPDATE users
 SET name = $2, picture = $3, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 RETURNING *;
+
+-- name: UpdateUserHourlyWorth :one
+UPDATE users
+SET hourly_worth = $2, updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING *;
+
+-- name: GetUserHourlyWorth :one
+SELECT hourly_worth FROM users WHERE id = $1 LIMIT 1;
