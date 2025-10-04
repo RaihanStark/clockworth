@@ -395,34 +395,4 @@
 		</div>
 	</div>
 
-	<!-- Insights -->
-	{#if totalHours > 0}
-		<div class="from-primary/5 to-primary/10 space-y-2 rounded-xl bg-gradient-to-br p-4">
-			<p class="text-primary text-xs font-bold uppercase tracking-wide">AI Insights</p>
-			{#if netTimeWorth >= 0}
-				<p class="text-foreground text-sm font-medium leading-relaxed">
-					🎯 Strong performance! You're generating <span class="font-bold text-emerald-600"
-						>+${netTimeWorth.toFixed(0)}</span
-					> in time value today.
-				</p>
-			{:else}
-				<p class="text-foreground text-sm font-medium leading-relaxed">
-					⚠️ You're currently <span class="font-bold text-red-600"
-						>${Math.abs(netTimeWorth).toFixed(0)}</span
-					> in the negative. Consider optimizing your schedule.
-				</p>
-			{/if}
-			{#if roiBreakdown.Waste > 0}
-				<p class="text-muted-foreground text-sm leading-relaxed">
-					Reclaim <span class="font-semibold text-red-600">{roiBreakdown.Waste.toFixed(1)}h</span> of
-					wasted time to boost your ROI.
-				</p>
-			{/if}
-		</div>
-	{:else}
-		<div class="border-border rounded-xl border-2 border-dashed p-6 text-center">
-			<Clock size={32} class="text-muted-foreground mx-auto mb-2 opacity-50" />
-			<p class="text-muted-foreground text-sm font-medium">Start tracking to see insights</p>
-		</div>
-	{/if}
 </div>
