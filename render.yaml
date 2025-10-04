@@ -1,0 +1,11 @@
+services:
+  # Go Backend API
+  - type: web
+    name: clockworth-api
+    env: go
+    buildCommand: |
+      go install github.com/amacneil/dbmate/v2@latest
+      go build -o bin/clockworth main.go
+    startCommand: ./app
+    # Run migrations before starting the app
+    preDeployCommand: dbmate up
