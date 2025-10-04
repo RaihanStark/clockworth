@@ -1,0 +1,1 @@
+DATABASE_URL=postgres://clockworth:clockworth_dev_password@localhost:5432/clockworth?sslmode=disable

@@ -1,0 +1,16 @@
+-- name: GetSessionByToken :one
+SELECT * FROM sessions WHERE token = $1 AND expires_at > CURRENT_TIMESTAMP LIMIT 1;
+
+-- name: CreateSession :one
+INSERT INTO sessions (user_id, token, expires_at)
+VALUES ($1, $2, $3)
+RETURNING *;
+
+-- name: DeleteSession :exec
+DELETE FROM sessions WHERE token = $1;
+
+-- name: DeleteExpiredSessions :exec
+DELETE FROM sessions WHERE expires_at <= CURRENT_TIMESTAMP;
+
+-- name: DeleteUserSessions :exec
+DELETE FROM sessions WHERE user_id = $1;
