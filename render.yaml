@@ -5,7 +5,7 @@ services:
     env: go
     buildCommand: |
       go install github.com/amacneil/dbmate/v2@latest
-      go build -o bin/clockworth main.go
+      go build -tags netgo -ldflags '-s -w' -o app
+      ~/go/bin/dbmate up
     startCommand: ./app
-    # Run migrations before starting the app
-    preDeployCommand: dbmate up
+    healthCheckPath: /health
