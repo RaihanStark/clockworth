@@ -119,21 +119,6 @@
 		});
 	}
 
-	// Weekly view - last 7 days
-	const weekDays: Array<{ dayOfWeek: string; dayNum: number; status: string; isToday: boolean }> =
-		[];
-	const today = currentDate.getDate();
-	for (let i = 6; i >= 0; i--) {
-		const dayNum = today - i;
-		const date = new Date(currentYear, currentMonth, dayNum);
-		weekDays.push({
-			dayOfWeek: date.toLocaleDateString('en-US', { weekday: 'short' }),
-			dayNum: date.getDate(),
-			status: mockDayStatus[date.getDate()] || 'neutral',
-			isToday: i === 0
-		});
-	}
-
 	function getDuration(activity: Activity): number {
 		const start = timeToMinutes(activity.startTime);
 		const end = timeToMinutes(activity.endTime);
@@ -288,41 +273,6 @@
 					<p class="text-muted-foreground text-sm">No data</p>
 				</div>
 			{/if}
-		</div>
-	</div>
-
-	<!-- Weekly Performance -->
-	<div class="rounded-xl bg-white p-5 shadow-md">
-		<div class="mb-4 flex items-center gap-2">
-			<TrendingUp size={18} class="text-slate-600" />
-			<h3 class="text-sm font-bold uppercase tracking-wide text-slate-700">This Week</h3>
-		</div>
-
-		<!-- Week grid -->
-		<div class="grid grid-cols-7 gap-2">
-			{#each weekDays as { dayOfWeek, dayNum, status, isToday }}
-				<div class="flex flex-col items-center gap-2">
-					<span class="text-xs font-bold {isToday ? 'text-blue-600' : 'text-slate-500'}"
-						>{dayOfWeek}</span
-					>
-					<button
-						class="relative aspect-square w-full rounded-xl transition-all {getDayColor(
-							status
-						)} {isToday
-							? 'scale-110 shadow-lg shadow-blue-500/50 ring-4 ring-blue-500'
-							: 'shadow-md'}"
-						title="{dayOfWeek} {dayNum} - {status === 'positive'
-							? 'Positive'
-							: status === 'negative'
-								? 'Negative'
-								: 'Neutral'}"
-					>
-						<span class="flex h-full items-center justify-center text-sm font-bold text-white">
-							{dayNum}
-						</span>
-					</button>
-				</div>
-			{/each}
 		</div>
 	</div>
 
