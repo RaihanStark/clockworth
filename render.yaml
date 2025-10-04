@@ -10,3 +10,9 @@ services:
       $(go env GOPATH)/bin/dbmate up
     startCommand: ./app
     healthCheckPath: /health
+    autoDeploy: true
+    branch: main
+    ignoredPaths:
+      - web/**
+      - docs/**
+      - README*.md
