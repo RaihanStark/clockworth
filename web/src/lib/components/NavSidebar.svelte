@@ -28,7 +28,7 @@
 
 	const navItems: NavItem[] = [
 		{ label: 'Today', icon: Calendar, href: '/dashboard' },
-		{ label: 'Settings', icon: Settings, href: '/dashboard/settings' }
+		{ label: 'Settings', icon: Settings, href: '/settings' }
 	];
 
 	function handleNavClick() {

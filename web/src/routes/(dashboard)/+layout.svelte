@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
+	import { navigating } from '$app/stores';
 	import NavSidebar from '$lib/components/NavSidebar.svelte';
 	import { Menu, Clock } from '@lucide/svelte';
-	import { authStore } from '$lib/stores/auth';
 
 	let mobileMenuOpen = $state(false);
 
@@ -14,16 +13,18 @@
 	function closeMobileMenu() {
 		mobileMenuOpen = false;
 	}
-
-	// Protect dashboard routes
-	$effect(() => {
-		if ($authStore.initialized && !$authStore.user) {
-			goto('/login');
-		}
-	});
 </script>
 
-<div class="flex h-screen flex-col overflow-hidden lg:flex-row">
+{#if $navigating || !$page.data.user}
+	<!-- Loading State -->
+	<div class="flex h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+		<div class="flex flex-col items-center gap-4">
+			<div class="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600"></div>
+			<p class="text-sm font-semibold text-slate-600">Loading...</p>
+		</div>
+	</div>
+{:else}
+	<div class="flex h-screen flex-col overflow-hidden lg:flex-row">
 	<!-- Mobile Top Bar -->
 	<header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
 		<button
@@ -64,3 +65,4 @@
 		<slot />
 	</main>
 </div>
+{/if}
