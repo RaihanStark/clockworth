@@ -12,7 +12,8 @@ services:
     healthCheckPath: /health
     autoDeploy: true
     branch: main
-    ignoredPaths:
-      - web/**
-      - docs/**
-      - README*.md
+    buildFilter:
+      ignoredPaths:
+        - web/**
+        - docs/**
+        - README*.md
