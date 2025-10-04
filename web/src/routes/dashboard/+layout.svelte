@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import NavSidebar from '$lib/components/NavSidebar.svelte';
 	import { Menu, Clock } from '@lucide/svelte';
+	import { authStore } from '$lib/stores/auth';
 
 	let mobileMenuOpen = $state(false);
 
@@ -11,6 +14,13 @@
 	function closeMobileMenu() {
 		mobileMenuOpen = false;
 	}
+
+	// Protect dashboard routes
+	$effect(() => {
+		if ($authStore.initialized && !$authStore.user) {
+			goto('/login');
+		}
+	});
 </script>
 
 <div class="flex h-screen flex-col overflow-hidden lg:flex-row">

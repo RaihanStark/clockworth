@@ -10,6 +10,7 @@
 		HelpCircle
 	} from '@lucide/svelte';
 	import { page } from '$app/stores';
+	import { authStore } from '$lib/stores/auth';
 
 	interface NavItem {
 		label: string;
@@ -26,8 +27,8 @@
 	let dropdownOpen = $state(false);
 
 	const navItems: NavItem[] = [
-		{ label: 'Today', icon: Calendar, href: '/' },
-		{ label: 'Settings', icon: Settings, href: '/settings' }
+		{ label: 'Today', icon: Calendar, href: '/dashboard' },
+		{ label: 'Settings', icon: Settings, href: '/dashboard/settings' }
 	];
 
 	function handleNavClick() {
@@ -37,8 +38,8 @@
 	}
 
 	function isActive(href: string): boolean {
-		if (href === '/') {
-			return $page.url.pathname === '/';
+		if (href === '/dashboard') {
+			return $page.url.pathname === '/dashboard';
 		}
 		return $page.url.pathname.startsWith(href);
 	}
@@ -47,14 +48,22 @@
 		dropdownOpen = !dropdownOpen;
 	}
 
-	function handleLogout() {
-		// Add logout logic here
-		console.log('Logout clicked');
+	async function handleLogout() {
 		dropdownOpen = false;
+		await authStore.logout();
 	}
 
 	function closeDropdown() {
 		dropdownOpen = false;
+	}
+
+	function getInitials(name: string): string {
+		return name
+			.split(' ')
+			.map((n) => n[0])
+			.join('')
+			.toUpperCase()
+			.slice(0, 2);
 	}
 </script>
 
@@ -124,8 +133,8 @@
 			>
 				<!-- User Info Header -->
 				<div class="border-b border-white/10 px-4 py-3">
-					<p class="text-sm font-bold text-white">User</p>
-					<p class="text-xs text-slate-400">user@email.com</p>
+					<p class="text-sm font-bold text-white">{$authStore.user?.name || 'User'}</p>
+					<p class="text-xs text-slate-400">{$authStore.user?.email || ''}</p>
 				</div>
 
 				<!-- Menu Items -->
@@ -178,14 +187,22 @@
 				? 'bg-white/5'
 				: ''}"
 		>
-			<div
-				class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 font-bold text-white shadow-lg"
-			>
-				U
-			</div>
+			{#if $authStore.user?.picture}
+				<img
+					src={$authStore.user.picture}
+					alt={$authStore.user.name}
+					class="h-10 w-10 rounded-full object-cover shadow-lg ring-2 ring-white/10"
+				/>
+			{:else}
+				<div
+					class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 font-bold text-white shadow-lg"
+				>
+					{$authStore.user?.name ? getInitials($authStore.user.name) : 'U'}
+				</div>
+			{/if}
 			<div class="flex-1 text-left">
-				<p class="text-sm font-semibold text-white">User</p>
-				<p class="text-xs text-slate-400">Pro Plan</p>
+				<p class="text-sm font-semibold text-white">{$authStore.user?.name || 'User'}</p>
+				<p class="text-xs text-slate-400">{$authStore.user?.email || 'Loading...'}</p>
 			</div>
 			<ChevronDown
 				size={18}

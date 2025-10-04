@@ -39,58 +39,83 @@
 	const currentDate = new Date();
 	const currentMonth = currentDate.getMonth();
 	const currentYear = currentDate.getFullYear();
-	const monthName = currentDate.toLocaleDateString('en-US', { month: 'long' });
-
-	// Get first day of month (0 = Sunday, 1 = Monday, etc.)
-	const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-	const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
 	// Mock data: status for each day (green = positive, red = negative, gray = neutral/no data)
-	const mockDayStatus: Record<number, 'positive' | 'negative' | 'neutral'> = {
-		1: 'positive',
-		2: 'positive',
-		3: 'negative',
-		4: 'positive',
-		5: 'neutral',
-		6: 'neutral',
-		7: 'neutral',
-		8: 'positive',
-		9: 'positive',
-		10: 'negative',
-		11: 'positive',
-		12: 'positive',
-		13: 'neutral',
-		14: 'neutral',
-		15: 'positive',
-		16: 'negative',
-		17: 'positive',
-		18: 'positive',
-		19: 'positive',
-		20: 'neutral',
-		21: 'neutral',
-		22: 'positive',
-		23: 'negative',
-		24: 'positive',
-		25: 'positive',
-		26: 'neutral',
-		27: 'neutral',
-		28: 'positive',
-		29: 'positive',
-		30: 'positive'
+	const mockDayStatus: Record<string, 'positive' | 'negative' | 'neutral'> = {
+		'2025-09-04': 'positive',
+		'2025-09-05': 'positive',
+		'2025-09-06': 'negative',
+		'2025-09-07': 'positive',
+		'2025-09-08': 'neutral',
+		'2025-09-09': 'neutral',
+		'2025-09-10': 'neutral',
+		'2025-09-11': 'positive',
+		'2025-09-12': 'positive',
+		'2025-09-13': 'negative',
+		'2025-09-14': 'positive',
+		'2025-09-15': 'positive',
+		'2025-09-16': 'neutral',
+		'2025-09-17': 'neutral',
+		'2025-09-18': 'positive',
+		'2025-09-19': 'negative',
+		'2025-09-20': 'positive',
+		'2025-09-21': 'positive',
+		'2025-09-22': 'positive',
+		'2025-09-23': 'neutral',
+		'2025-09-24': 'neutral',
+		'2025-09-25': 'positive',
+		'2025-09-26': 'negative',
+		'2025-09-27': 'positive',
+		'2025-09-28': 'positive',
+		'2025-09-29': 'neutral',
+		'2025-09-30': 'neutral',
+		'2025-10-01': 'positive',
+		'2025-10-02': 'positive',
+		'2025-10-03': 'positive'
 	};
 
-	// Build calendar grid
-	const calendarDays: Array<{ day: number | null; status: string | null; isToday?: boolean }> = [];
-	// Add empty cells for days before month starts
-	for (let i = 0; i < firstDayOfMonth; i++) {
-		calendarDays.push({ day: null, status: null });
-	}
-	// Add days of the month
-	for (let day = 1; day <= daysInMonth; day++) {
+	// Build last 30 days calendar grid
+	const calendarDays: Array<{
+		day: number;
+		month: string;
+		status: string | null;
+		isToday?: boolean;
+		dateKey: string;
+	}> = [];
+
+	// Calculate the date 30 days ago
+	const thirtyDaysAgo = new Date(currentDate);
+	thirtyDaysAgo.setDate(currentDate.getDate() - 29); // -29 to include today
+
+	// Get the day of week for 30 days ago to align the grid
+	const startDayOfWeek = thirtyDaysAgo.getDay();
+
+	// Add empty cells to align with the correct day of week
+	for (let i = 0; i < startDayOfWeek; i++) {
+		const emptyDate = new Date(thirtyDaysAgo);
+		emptyDate.setDate(thirtyDaysAgo.getDate() - (startDayOfWeek - i));
+		const dateKey = `${emptyDate.getFullYear()}-${String(emptyDate.getMonth() + 1).padStart(2, '0')}-${String(emptyDate.getDate()).padStart(2, '0')}`;
 		calendarDays.push({
-			day,
-			status: mockDayStatus[day] || 'neutral',
-			isToday: day === currentDate.getDate()
+			day: emptyDate.getDate(),
+			month: emptyDate.toLocaleDateString('en-US', { month: 'short' }),
+			status: null,
+			dateKey
+		});
+	}
+
+	// Add the last 30 days
+	for (let i = 0; i < 30; i++) {
+		const date = new Date(thirtyDaysAgo);
+		date.setDate(thirtyDaysAgo.getDate() + i);
+		const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+		const isToday = date.toDateString() === currentDate.toDateString();
+
+		calendarDays.push({
+			day: date.getDate(),
+			month: date.toLocaleDateString('en-US', { month: 'short' }),
+			status: mockDayStatus[dateKey] || 'neutral',
+			isToday,
+			dateKey
 		});
 	}
 
@@ -301,14 +326,13 @@
 		</div>
 	</div>
 
-	<!-- Monthly Calendar Heatmap -->
+	<!-- Last 30 Days Calendar Heatmap -->
 	<div class="rounded-xl bg-white p-5 shadow-md">
 		<div class="mb-4 flex items-center justify-between">
 			<div class="flex items-center gap-2">
 				<Calendar size={18} class="text-slate-600" />
 				<h3 class="text-sm font-bold uppercase tracking-wide text-slate-700">
-					{monthName}
-					{currentYear}
+					Last 30 Days
 				</h3>
 			</div>
 		</div>
@@ -322,9 +346,13 @@
 
 		<!-- Calendar grid -->
 		<div class="grid grid-cols-7 gap-1">
-			{#each calendarDays as { day, status, isToday }}
-				{#if day === null}
-					<div class="aspect-square"></div>
+			{#each calendarDays as { day, month, status, isToday }}
+				{#if status === null}
+					<div class="aspect-square opacity-30">
+						<div class="flex h-full items-center justify-center rounded-lg bg-slate-100">
+							<span class="text-xs font-medium text-slate-400">{day}</span>
+						</div>
+					</div>
 				{:else}
 					<button
 						class="group relative aspect-square rounded-lg transition-all {getDayColor(
@@ -332,7 +360,7 @@
 						)} {isToday
 							? 'ring-3 scale-105 shadow-md shadow-blue-500/40 ring-blue-500'
 							: 'shadow-sm'}"
-						title="{day} - {status === 'positive'
+						title="{month} {day} - {status === 'positive'
 							? 'Positive Net Worth'
 							: status === 'negative'
 								? 'Negative Net Worth'

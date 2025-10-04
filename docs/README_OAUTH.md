@@ -150,11 +150,50 @@ make build
 
 ## Testing the OAuth Flow
 
+### Backend Only (API Testing)
 1. Start the backend: `make run`
 2. Visit: http://localhost:8080/auth/google/login
 3. You'll receive JSON with a `url` field
 4. Open that URL in browser to authenticate with Google
 5. After authentication, you'll be redirected to your frontend with the session token
+
+### Full Stack (Frontend + Backend)
+
+1. **Start Backend:**
+   ```bash
+   make run
+   # or
+   go run main.go
+   ```
+
+2. **Start Frontend:**
+   ```bash
+   cd web
+   npm install  # if not done yet
+   npm run dev
+   ```
+
+3. **Test the Flow:**
+   - Open http://localhost:5173/login in your browser
+   - Click "Sign in with Google"
+   - Authenticate with Google
+   - You'll be redirected to `/callback`, then to `/dashboard`
+   - Your session is now active!
+
+4. **Verify Authentication:**
+   - Navigate to http://localhost:5173/dashboard
+   - You should see your dashboard (protected route)
+   - If not logged in, you'll be redirected to login
+
+### Frontend Environment Variables
+
+The frontend uses `.env` file in the `web/` directory:
+
+```bash
+VITE_API_URL=http://localhost:8080
+```
+
+This tells the frontend where the backend API is running.
 
 ## Troubleshooting
 
