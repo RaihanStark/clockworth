@@ -11,6 +11,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type SchemaMigration struct {
+	Version string `json:"version"`
+}
+
 type Session struct {
 	ID        uuid.UUID    `json:"id"`
 	UserID    uuid.UUID    `json:"user_id"`
@@ -20,11 +24,12 @@ type Session struct {
 }
 
 type User struct {
-	ID        uuid.UUID      `json:"id"`
-	Email     string         `json:"email"`
-	Name      sql.NullString `json:"name"`
-	Picture   sql.NullString `json:"picture"`
-	GoogleID  string         `json:"google_id"`
-	CreatedAt sql.NullTime   `json:"created_at"`
-	UpdatedAt sql.NullTime   `json:"updated_at"`
+	ID          uuid.UUID      `json:"id"`
+	Email       string         `json:"email"`
+	Name        sql.NullString `json:"name"`
+	Picture     sql.NullString `json:"picture"`
+	GoogleID    string         `json:"google_id"`
+	CreatedAt   sql.NullTime   `json:"created_at"`
+	UpdatedAt   sql.NullTime   `json:"updated_at"`
+	HourlyWorth float64        `json:"hourly_worth"`
 }

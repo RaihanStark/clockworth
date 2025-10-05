@@ -47,7 +47,8 @@ CREATE TABLE public.users (
     picture text,
     google_id character varying(255) NOT NULL,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    hourly_worth numeric(10,2) DEFAULT 0.00
 );
 
 
@@ -153,4 +154,5 @@ ALTER TABLE ONLY public.sessions
 
 INSERT INTO public.schema_migrations (version) VALUES
     ('20251004'),
-    ('20251005');
+    ('20251005'),
+    ('20251006');

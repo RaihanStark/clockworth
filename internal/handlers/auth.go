@@ -169,10 +169,11 @@ func (h *AuthHandler) Me(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"id":      user.ID,
-		"email":   user.Email,
-		"name":    user.Name.String,
-		"picture": user.Picture.String,
+		"id":           user.ID,
+		"email":        user.Email,
+		"name":         user.Name.String,
+		"picture":      user.Picture.String,
+		"hourly_worth": user.HourlyWorth,
 	})
 }
 

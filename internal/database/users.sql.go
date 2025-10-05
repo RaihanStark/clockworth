@@ -15,7 +15,7 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (email, name, picture, google_id)
 VALUES ($1, $2, $3, $4)
-RETURNING id, email, name, picture, google_id, created_at, updated_at
+RETURNING id, email, name, picture, google_id, created_at, updated_at, hourly_worth
 `
 
 type CreateUserParams struct {
@@ -41,12 +41,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.GoogleID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HourlyWorth,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, picture, google_id, created_at, updated_at FROM users WHERE email = $1 LIMIT 1
+SELECT id, email, name, picture, google_id, created_at, updated_at, hourly_worth FROM users WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -60,12 +61,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.GoogleID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HourlyWorth,
 	)
 	return i, err
 }
 
 const getUserByGoogleID = `-- name: GetUserByGoogleID :one
-SELECT id, email, name, picture, google_id, created_at, updated_at FROM users WHERE google_id = $1 LIMIT 1
+SELECT id, email, name, picture, google_id, created_at, updated_at, hourly_worth FROM users WHERE google_id = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByGoogleID(ctx context.Context, googleID string) (User, error) {
@@ -79,12 +81,13 @@ func (q *Queries) GetUserByGoogleID(ctx context.Context, googleID string) (User,
 		&i.GoogleID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HourlyWorth,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, name, picture, google_id, created_at, updated_at FROM users WHERE id = $1 LIMIT 1
+SELECT id, email, name, picture, google_id, created_at, updated_at, hourly_worth FROM users WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
@@ -98,6 +101,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.GoogleID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HourlyWorth,
 	)
 	return i, err
 }
@@ -106,7 +110,7 @@ const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET name = $2, picture = $3, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
-RETURNING id, email, name, picture, google_id, created_at, updated_at
+RETURNING id, email, name, picture, google_id, created_at, updated_at, hourly_worth
 `
 
 type UpdateUserParams struct {
@@ -126,6 +130,35 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.GoogleID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.HourlyWorth,
+	)
+	return i, err
+}
+
+const updateUserHourlyWorth = `-- name: UpdateUserHourlyWorth :one
+UPDATE users
+SET hourly_worth = $2, updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+RETURNING id, email, name, picture, google_id, created_at, updated_at, hourly_worth
+`
+
+type UpdateUserHourlyWorthParams struct {
+	ID          uuid.UUID `json:"id"`
+	HourlyWorth float64   `json:"hourly_worth"`
+}
+
+func (q *Queries) UpdateUserHourlyWorth(ctx context.Context, arg UpdateUserHourlyWorthParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUserHourlyWorth, arg.ID, arg.HourlyWorth)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Picture,
+		&i.GoogleID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.HourlyWorth,
 	)
 	return i, err
 }
