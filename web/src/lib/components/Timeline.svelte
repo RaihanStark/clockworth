@@ -20,6 +20,12 @@
 	let dragCurrentY = $state(0);
 	let timelineContainer: HTMLDivElement;
 
+	// Activity drag state
+	let draggedActivity = $state<Activity | null>(null);
+	let activityDragStartY = $state(0);
+	let activityDragCurrentY = $state(0);
+	let activityOriginalTop = $state(0);
+
 	function updateCurrentTime() {
 		const now = new Date();
 		const hours = now.getHours();
@@ -103,42 +109,117 @@
 	}
 
 	function handleMouseMove(e: MouseEvent) {
-		if (!isDragging) return;
+		if (isDragging) {
+			const rect = timelineContainer.getBoundingClientRect();
+			dragCurrentY = e.clientY - rect.top + timelineContainer.scrollTop;
+		}
 
-		const rect = timelineContainer.getBoundingClientRect();
-		dragCurrentY = e.clientY - rect.top + timelineContainer.scrollTop;
+		if (draggedActivity) {
+			const rect = timelineContainer.getBoundingClientRect();
+			activityDragCurrentY = e.clientY - rect.top + timelineContainer.scrollTop;
+		}
 	}
 
-	function handleMouseUp(e: MouseEvent) {
-		if (!isDragging) return;
+	function handleMouseUp() {
+		if (isDragging) {
+			isDragging = false;
 
-		isDragging = false;
+			const startY = Math.min(dragStartY, dragCurrentY);
+			const endY = Math.max(dragStartY, dragCurrentY);
 
-		const startY = Math.min(dragStartY, dragCurrentY);
-		const endY = Math.max(dragStartY, dragCurrentY);
+			// Convert Y positions to time
+			const startMinutes = Math.round((startY / 2400) * 24 * 60);
+			const endMinutes = Math.round((endY / 2400) * 24 * 60);
 
-		// Convert Y positions to time
-		const startMinutes = Math.round((startY / 2400) * 24 * 60);
-		const endMinutes = Math.round((endY / 2400) * 24 * 60);
+			// Round to nearest 15 minutes
+			const roundedStart = Math.round(startMinutes / 15) * 15;
+			const roundedEnd = Math.round(endMinutes / 15) * 15;
 
-		// Round to nearest 15 minutes
-		const roundedStart = Math.round(startMinutes / 15) * 15;
-		const roundedEnd = Math.round(endMinutes / 15) * 15;
+			// Ensure minimum 15 minutes duration
+			const finalEnd = roundedEnd <= roundedStart ? roundedStart + 15 : roundedEnd;
 
-		// Ensure minimum 15 minutes duration
-		const finalEnd = roundedEnd <= roundedStart ? roundedStart + 15 : roundedEnd;
+			// Format times
+			const startHour = Math.floor(roundedStart / 60);
+			const startMin = roundedStart % 60;
+			const endHour = Math.floor(finalEnd / 60);
+			const endMin = finalEnd % 60;
 
-		// Format times
-		const startHour = Math.floor(roundedStart / 60);
-		const startMin = roundedStart % 60;
-		const endHour = Math.floor(finalEnd / 60);
-		const endMin = finalEnd % 60;
+			const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
+			const endTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
 
-		const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
-		const endTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+			// Create activity with selected time range
+			onAddActivity(startHour, startTime, endTime);
+		}
 
-		// Create activity with selected time range
-		onAddActivity(startHour, startTime, endTime);
+		if (draggedActivity) {
+			// Calculate new time based on drag position
+			const deltaY = activityDragCurrentY - activityDragStartY;
+			const newTop = activityOriginalTop + deltaY;
+
+			// Convert to minutes
+			const newStartMinutes = Math.round((newTop / 2400) * 24 * 60);
+			const roundedStart = Math.round(newStartMinutes / 15) * 15;
+
+			// Get original duration
+			const originalStart = timeToMinutes(draggedActivity.startTime);
+			const originalEnd = timeToMinutes(draggedActivity.endTime);
+			const duration = originalEnd - originalStart;
+
+			// Calculate new end time
+			const newEndMinutes = roundedStart + duration;
+
+			// Format times
+			const startHour = Math.floor(roundedStart / 60);
+			const startMin = roundedStart % 60;
+			const endHour = Math.floor(newEndMinutes / 60);
+			const endMin = newEndMinutes % 60;
+
+			const newStartTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
+			const newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+
+			// Update activity
+			activities.update(draggedActivity.id, {
+				startTime: newStartTime,
+				endTime: newEndTime
+			});
+
+			draggedActivity = null;
+		}
+	}
+
+	// Activity drag and click handlers
+	let clickTimeout: number;
+	let isDraggingActivity = $state(false);
+
+	function handleActivityMouseDown(e: MouseEvent, activity: Activity) {
+		e.stopPropagation();
+		e.preventDefault();
+
+		isDraggingActivity = false;
+		draggedActivity = activity;
+		const rect = timelineContainer.getBoundingClientRect();
+		activityDragStartY = e.clientY - rect.top + timelineContainer.scrollTop;
+		activityDragCurrentY = activityDragStartY;
+
+		// Store original position
+		const startMinutes = timeToMinutes(activity.startTime);
+		activityOriginalTop = (startMinutes / (24 * 60)) * 2400;
+
+		// Set flag after short delay to distinguish drag from click
+		clickTimeout = setTimeout(() => {
+			isDraggingActivity = true;
+		}, 150) as unknown as number;
+	}
+
+	function handleActivityClick(activity: Activity) {
+		clearTimeout(clickTimeout);
+
+		// Only trigger click if not dragging
+		if (!isDraggingActivity && draggedActivity?.id !== activity.id) {
+			onActivityClick(activity);
+		}
+
+		isDraggingActivity = false;
 	}
 
 	// Computed selection position for visual feedback
@@ -155,6 +236,22 @@
 			display: 'block'
 		};
 	});
+
+	// Get activity position with drag offset
+	function getActivityDragPosition(activity: Activity) {
+		const basePosition = getActivityPosition(activity);
+
+		if (draggedActivity?.id === activity.id) {
+			const deltaY = activityDragCurrentY - activityDragStartY;
+			const newTop = ((activityOriginalTop + deltaY) / 2400) * 100;
+			return {
+				...basePosition,
+				top: `${newTop}%`
+			};
+		}
+
+		return basePosition;
+	}
 </script>
 
 <div
@@ -182,6 +279,7 @@
 		onmouseup={handleMouseUp}
 		onmouseleave={() => {
 			isDragging = false;
+			draggedActivity = null;
 		}}
 		style="cursor: {isDragging
 			? 'grabbing'
@@ -230,14 +328,16 @@
 
 			<!-- Activities -->
 			{#each $activities as activity (activity.id)}
-				{@const position = getActivityPosition(activity)}
+				{@const position = getActivityDragPosition(activity)}
 				{@const roiColor = getROIColor(activity.roi)}
 				{@const icon = getROIIcon(activity.roi)}
 				{@const duration = getDuration(activity)}
+				{@const isBeingDragged = draggedActivity?.id === activity.id}
 				<button
-					class="absolute left-24 right-4 z-20 overflow-hidden rounded-2xl border-2 bg-gradient-to-r px-5 py-3 text-left shadow-lg transition-all hover:scale-[1.01] hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/30 {roiColor}"
-					style="top: {position.top}; height: {position.height}; min-height: 60px"
-					onclick={() => onActivityClick(activity)}
+					class="absolute left-24 right-4 z-20 overflow-hidden rounded-2xl border-2 bg-gradient-to-r px-5 py-3 text-left shadow-lg focus:outline-none focus:ring-4 focus:ring-emerald-500/30 {roiColor} {isBeingDragged ? 'scale-105 shadow-2xl cursor-grabbing opacity-80 ring-4 ring-blue-500/50' : 'transition-all hover:scale-[1.01] hover:shadow-2xl cursor-grab'}"
+					style="top: {position.top}; height: {position.height}; min-height: 60px; {isBeingDragged ? 'transition: none;' : ''}"
+					onmousedown={(e) => handleActivityMouseDown(e, activity)}
+					onclick={() => handleActivityClick(activity)}
 					aria-label="Edit {activity.title}"
 				>
 					<div class="flex h-full flex-col justify-center">
