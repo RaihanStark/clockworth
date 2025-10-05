@@ -288,7 +288,9 @@
 
 <div
 	class="group absolute left-24 right-4 z-20 overflow-visible rounded-2xl"
-	style="top: {position.top}; height: {position.height}; min-height: 60px; {isDragging || isResizing ? 'transition: none;' : ''}"
+	style="top: {position.top}; height: {position.height}; min-height: 60px; {isDragging || isResizing
+		? 'transition: none;'
+		: ''}"
 >
 	<!-- Top Resize Handle -->
 	<div
@@ -298,16 +300,16 @@
 		tabindex="-1"
 		aria-label="Resize activity start time"
 	>
-		<div class="h-full w-full rounded-t-xl bg-white/40 backdrop-blur-sm"></div>
+		<div class="h-full w-full"></div>
 	</div>
 
 	<!-- Activity Content -->
 	<button
 		class="relative h-full w-full overflow-hidden rounded-2xl border-2 bg-gradient-to-r px-5 py-3 text-left shadow-lg focus:outline-none focus:ring-4 focus:ring-emerald-500/30 {roiColor} {isDragging
-			? 'scale-105 shadow-2xl cursor-grabbing opacity-80 ring-4 ring-blue-500/50'
+			? 'scale-105 cursor-grabbing opacity-80 shadow-2xl ring-4 ring-blue-500/50'
 			: isResizing
 				? 'shadow-2xl ring-4 ring-purple-500/50'
-				: 'transition-all hover:scale-[1.01] hover:shadow-2xl cursor-grab'}"
+				: 'cursor-grab transition-all hover:scale-[1.01] hover:shadow-2xl'}"
 		onmousedown={handleDragStart}
 		aria-label="Edit {activity.title}"
 	>
@@ -346,6 +348,6 @@
 		tabindex="-1"
 		aria-label="Resize activity end time"
 	>
-		<div class="h-full w-full rounded-b-xl bg-white/40 backdrop-blur-sm"></div>
+		<div class="h-full w-full"></div>
 	</div>
 </div>
