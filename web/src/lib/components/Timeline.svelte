@@ -26,6 +26,14 @@
 	let activityDragCurrentY = $state(0);
 	let activityOriginalTop = $state(0);
 
+	// Activity resize state
+	let resizingActivity = $state<Activity | null>(null);
+	let resizeMode = $state<'top' | 'bottom' | null>(null);
+	let resizeStartY = $state(0);
+	let resizeCurrentY = $state(0);
+	let originalStartTime = $state('');
+	let originalEndTime = $state('');
+
 	function updateCurrentTime() {
 		const now = new Date();
 		const hours = now.getHours();
@@ -114,9 +122,14 @@
 			dragCurrentY = e.clientY - rect.top + timelineContainer.scrollTop;
 		}
 
-		if (draggedActivity) {
+		if (draggedActivity && !resizingActivity) {
 			const rect = timelineContainer.getBoundingClientRect();
 			activityDragCurrentY = e.clientY - rect.top + timelineContainer.scrollTop;
+		}
+
+		if (resizingActivity) {
+			const rect = timelineContainer.getBoundingClientRect();
+			resizeCurrentY = e.clientY - rect.top + timelineContainer.scrollTop;
 		}
 	}
 
@@ -151,7 +164,7 @@
 			onAddActivity(startHour, startTime, endTime);
 		}
 
-		if (draggedActivity) {
+		if (draggedActivity && !resizingActivity) {
 			// Calculate new time based on drag position
 			const deltaY = activityDragCurrentY - activityDragStartY;
 			const newTop = activityOriginalTop + deltaY;
@@ -185,6 +198,49 @@
 
 			draggedActivity = null;
 		}
+
+		if (resizingActivity && resizeMode) {
+			const deltaY = resizeCurrentY - resizeStartY;
+			const deltaMinutes = Math.round((deltaY / 2400) * 24 * 60);
+
+			let newStartTime = originalStartTime;
+			let newEndTime = originalEndTime;
+
+			if (resizeMode === 'top') {
+				// Resize from top - adjust start time
+				const startMinutes = timeToMinutes(originalStartTime);
+				const newStartMinutes = Math.round((startMinutes + deltaMinutes) / 15) * 15;
+				const endMinutes = timeToMinutes(originalEndTime);
+
+				// Ensure minimum 15 minutes duration
+				if (newStartMinutes < endMinutes - 15) {
+					const startHour = Math.floor(newStartMinutes / 60);
+					const startMin = newStartMinutes % 60;
+					newStartTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
+				}
+			} else {
+				// Resize from bottom - adjust end time
+				const endMinutes = timeToMinutes(originalEndTime);
+				const newEndMinutes = Math.round((endMinutes + deltaMinutes) / 15) * 15;
+				const startMinutes = timeToMinutes(originalStartTime);
+
+				// Ensure minimum 15 minutes duration
+				if (newEndMinutes > startMinutes + 15) {
+					const endHour = Math.floor(newEndMinutes / 60);
+					const endMin = newEndMinutes % 60;
+					newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+				}
+			}
+
+			// Update activity
+			activities.update(resizingActivity.id, {
+				startTime: newStartTime,
+				endTime: newEndTime
+			});
+
+			resizingActivity = null;
+			resizeMode = null;
+		}
 	}
 
 	// Activity drag and click handlers
@@ -214,12 +270,27 @@
 	function handleActivityClick(activity: Activity) {
 		clearTimeout(clickTimeout);
 
-		// Only trigger click if not dragging
-		if (!isDraggingActivity && draggedActivity?.id !== activity.id) {
+		// Only trigger click if not dragging or resizing
+		if (!isDraggingActivity && !resizingActivity && draggedActivity?.id !== activity.id) {
 			onActivityClick(activity);
 		}
 
 		isDraggingActivity = false;
+	}
+
+	// Resize handlers
+	function handleResizeStart(e: MouseEvent, activity: Activity, mode: 'top' | 'bottom') {
+		e.stopPropagation();
+		e.preventDefault();
+
+		resizingActivity = activity;
+		resizeMode = mode;
+		originalStartTime = activity.startTime;
+		originalEndTime = activity.endTime;
+
+		const rect = timelineContainer.getBoundingClientRect();
+		resizeStartY = e.clientY - rect.top + timelineContainer.scrollTop;
+		resizeCurrentY = resizeStartY;
 	}
 
 	// Computed selection position for visual feedback
@@ -237,17 +308,52 @@
 		};
 	});
 
-	// Get activity position with drag offset
+	// Get activity position with drag or resize offset
 	function getActivityDragPosition(activity: Activity) {
 		const basePosition = getActivityPosition(activity);
 
-		if (draggedActivity?.id === activity.id) {
+		// Handle drag movement
+		if (draggedActivity?.id === activity.id && !resizingActivity) {
 			const deltaY = activityDragCurrentY - activityDragStartY;
 			const newTop = ((activityOriginalTop + deltaY) / 2400) * 100;
 			return {
 				...basePosition,
 				top: `${newTop}%`
 			};
+		}
+
+		// Handle resize
+		if (resizingActivity?.id === activity.id && resizeMode) {
+			const deltaY = resizeCurrentY - resizeStartY;
+			const deltaPercent = (deltaY / 2400) * 100;
+
+			if (resizeMode === 'top') {
+				// Resizing from top - adjust top position and height
+				const currentTop = parseFloat(basePosition.top);
+				const currentHeight = parseFloat(basePosition.height);
+				const newTop = currentTop + deltaPercent;
+				const newHeight = currentHeight - deltaPercent;
+
+				// Minimum height of 1% (15 minutes)
+				if (newHeight >= 1.04) { // ~15 minutes
+					return {
+						top: `${newTop}%`,
+						height: `${newHeight}%`
+					};
+				}
+			} else {
+				// Resizing from bottom - adjust height only
+				const currentHeight = parseFloat(basePosition.height);
+				const newHeight = currentHeight + deltaPercent;
+
+				// Minimum height of 1% (15 minutes)
+				if (newHeight >= 1.04) {
+					return {
+						...basePosition,
+						height: `${newHeight}%`
+					};
+				}
+			}
 		}
 
 		return basePosition;
@@ -280,6 +386,8 @@
 		onmouseleave={() => {
 			isDragging = false;
 			draggedActivity = null;
+			resizingActivity = null;
+			resizeMode = null;
 		}}
 		style="cursor: {isDragging
 			? 'grabbing'
@@ -333,39 +441,67 @@
 				{@const icon = getROIIcon(activity.roi)}
 				{@const duration = getDuration(activity)}
 				{@const isBeingDragged = draggedActivity?.id === activity.id}
-				<button
-					class="absolute left-24 right-4 z-20 overflow-hidden rounded-2xl border-2 bg-gradient-to-r px-5 py-3 text-left shadow-lg focus:outline-none focus:ring-4 focus:ring-emerald-500/30 {roiColor} {isBeingDragged ? 'scale-105 shadow-2xl cursor-grabbing opacity-80 ring-4 ring-blue-500/50' : 'transition-all hover:scale-[1.01] hover:shadow-2xl cursor-grab'}"
-					style="top: {position.top}; height: {position.height}; min-height: 60px; {isBeingDragged ? 'transition: none;' : ''}"
-					onmousedown={(e) => handleActivityMouseDown(e, activity)}
-					onclick={() => handleActivityClick(activity)}
-					aria-label="Edit {activity.title}"
+				{@const isBeingResized = resizingActivity?.id === activity.id}
+				<div
+					class="group absolute left-24 right-4 z-20 overflow-visible rounded-2xl"
+					style="top: {position.top}; height: {position.height}; min-height: 60px; {isBeingDragged || isBeingResized ? 'transition: none;' : ''}"
 				>
-					<div class="flex h-full flex-col justify-center">
-						<div class="flex items-start justify-between gap-2">
-							<div class="flex-1">
-								<div class="mb-1 flex items-center gap-2">
-									<span class="text-lg">{icon}</span>
-									<p class="truncate text-base font-bold text-white drop-shadow-sm">
-										{activity.title}
-									</p>
+					<!-- Top Resize Handle -->
+					<div
+						class="absolute -top-1 left-0 right-0 z-30 h-2 cursor-ns-resize opacity-0 transition-opacity group-hover:opacity-100"
+						onmousedown={(e) => handleResizeStart(e, activity, 'top')}
+						role="button"
+						tabindex="-1"
+						aria-label="Resize activity start time"
+					>
+						<div class="h-full w-full bg-white/40 backdrop-blur-sm rounded-t-xl"></div>
+					</div>
+
+					<!-- Activity Content -->
+					<button
+						class="relative h-full w-full overflow-hidden rounded-2xl border-2 bg-gradient-to-r px-5 py-3 text-left shadow-lg focus:outline-none focus:ring-4 focus:ring-emerald-500/30 {roiColor} {isBeingDragged ? 'scale-105 shadow-2xl cursor-grabbing opacity-80 ring-4 ring-blue-500/50' : isBeingResized ? 'shadow-2xl ring-4 ring-purple-500/50' : 'transition-all hover:scale-[1.01] hover:shadow-2xl cursor-grab'}"
+						onmousedown={(e) => handleActivityMouseDown(e, activity)}
+						onclick={() => handleActivityClick(activity)}
+						aria-label="Edit {activity.title}"
+					>
+						<div class="flex h-full flex-col justify-center">
+							<div class="flex items-start justify-between gap-2">
+								<div class="flex-1">
+									<div class="mb-1 flex items-center gap-2">
+										<span class="text-lg">{icon}</span>
+										<p class="truncate text-base font-bold text-white drop-shadow-sm">
+											{activity.title}
+										</p>
+									</div>
+									<div class="flex items-center gap-3 text-xs text-white/90">
+										<span class="font-semibold">{activity.startTime} - {activity.endTime}</span>
+										<span class="rounded-full bg-white/20 px-2 py-0.5 font-bold">{duration}</span>
+									</div>
 								</div>
-								<div class="flex items-center gap-3 text-xs text-white/90">
-									<span class="font-semibold">{activity.startTime} - {activity.endTime}</span>
-									<span class="rounded-full bg-white/20 px-2 py-0.5 font-bold">{duration}</span>
+								<div class="flex flex-col items-end gap-1">
+									<span
+										class="rounded-lg bg-white/25 px-2 py-1 text-xs font-bold uppercase tracking-wide text-white"
+										>{activity.roi}</span
+									>
+									<span class="rounded-lg bg-white/20 px-2 py-0.5 text-xs font-medium text-white/80"
+										>{activity.category}</span
+									>
 								</div>
-							</div>
-							<div class="flex flex-col items-end gap-1">
-								<span
-									class="rounded-lg bg-white/25 px-2 py-1 text-xs font-bold uppercase tracking-wide text-white"
-									>{activity.roi}</span
-								>
-								<span class="rounded-lg bg-white/20 px-2 py-0.5 text-xs font-medium text-white/80"
-									>{activity.category}</span
-								>
 							</div>
 						</div>
+					</button>
+
+					<!-- Bottom Resize Handle -->
+					<div
+						class="absolute -bottom-1 left-0 right-0 z-30 h-2 cursor-ns-resize opacity-0 transition-opacity group-hover:opacity-100"
+						onmousedown={(e) => handleResizeStart(e, activity, 'bottom')}
+						role="button"
+						tabindex="-1"
+						aria-label="Resize activity end time"
+					>
+						<div class="h-full w-full bg-white/40 backdrop-blur-sm rounded-b-xl"></div>
 					</div>
-				</button>
+				</div>
 			{/each}
 		</div>
 	</div>
