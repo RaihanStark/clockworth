@@ -134,6 +134,13 @@ CREATE INDEX idx_activities_activity_date ON public.activities USING btree (acti
 
 
 --
+-- Name: idx_activities_overlap; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_activities_overlap ON public.activities USING btree (user_id, activity_date, start_time, end_time);
+
+
+--
 -- Name: idx_activities_user_date; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -211,4 +218,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20251004'),
     ('20251005'),
     ('20251006'),
-    ('20251007');
+    ('20251007'),
+    ('20251008');
