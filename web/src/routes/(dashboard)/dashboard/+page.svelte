@@ -3,8 +3,16 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import ActivityModal from '$lib/components/ActivityModal.svelte';
 	import { Plus } from '@lucide/svelte';
-	import type { Activity } from '$lib/stores/activities';
+	import type { Activity } from '$lib/types';
+	import type { PageData } from './$types';
 
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
+
+	let activities = $state<Activity[]>(data.activities);
 	let selectedActivity = $state<Activity | null>(null);
 	let showModal = $state(false);
 	let initialHour = $state(9);
@@ -27,6 +35,18 @@
 	function handleCloseModal() {
 		showModal = false;
 		selectedActivity = null;
+	}
+
+	function handleActivityAdded(activity: Activity) {
+		activities = [...activities, activity];
+	}
+
+	function handleActivityUpdated(activity: Activity) {
+		activities = activities.map((a) => (a.id === activity.id ? activity : a));
+	}
+
+	function handleActivityDeleted(id: string) {
+		activities = activities.filter((a) => a.id !== id);
 	}
 
 	const currentDate = new Date();
@@ -66,20 +86,30 @@
 		<!-- Desktop Layout: Split View -->
 		<div class="hidden h-full gap-6 lg:grid lg:grid-cols-3">
 			<div class="col-span-2 overflow-hidden">
-				<Timeline onActivityClick={handleActivityClick} onAddActivity={handleAddActivity} />
+				<Timeline
+					{activities}
+					onActivityClick={handleActivityClick}
+					onAddActivity={handleAddActivity}
+					onActivityUpdate={handleActivityUpdated}
+				/>
 			</div>
 			<div class="col-span-1 overflow-hidden">
-				<Sidebar />
+				<Sidebar {activities} />
 			</div>
 		</div>
 
 		<!-- Mobile Layout: Stacked -->
 		<div class="flex h-full flex-col gap-6 lg:hidden">
 			<div class="flex-1 overflow-hidden">
-				<Timeline onActivityClick={handleActivityClick} onAddActivity={handleAddActivity} />
+				<Timeline
+					{activities}
+					onActivityClick={handleActivityClick}
+					onAddActivity={handleAddActivity}
+					onActivityUpdate={handleActivityUpdated}
+				/>
 			</div>
 			<div class="h-[300px] overflow-hidden">
-				<Sidebar />
+				<Sidebar {activities} />
 			</div>
 		</div>
 	</div>
@@ -102,5 +132,7 @@
 		initialStartTime={initialStartTime}
 		initialEndTime={initialEndTime}
 		onClose={handleCloseModal}
+		onActivityAdded={handleActivityAdded}
+		onActivityUpdated={handleActivityUpdated}
 	/>
 {/if}

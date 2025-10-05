@@ -1,16 +1,18 @@
 <script lang="ts">
-	import { activities, type Activity } from '$lib/stores/activities';
+	import type { Activity } from '$lib/types';
 	import { Clock } from '@lucide/svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import ActivityBlock from './ActivityBlock.svelte';
 	import TimelineGrid from './TimelineGrid.svelte';
 
 	interface Props {
+		activities: Activity[];
 		onActivityClick: (activity: Activity) => void;
 		onAddActivity: (hour: number, startTime?: string, endTime?: string) => void;
+		onActivityUpdate: (activity: Activity) => void;
 	}
 
-	let { onActivityClick, onAddActivity }: Props = $props();
+	let { activities, onActivityClick, onAddActivity, onActivityUpdate }: Props = $props();
 
 	let timelineContainer: HTMLDivElement;
 	let currentTimePosition = $state(0);
@@ -163,8 +165,8 @@
 			<TimelineGrid />
 
 			<!-- Activities -->
-			{#each $activities as activity (activity.id)}
-				<ActivityBlock {activity} containerElement={timelineContainer} {onActivityClick} />
+			{#each activities as activity (activity.id)}
+				<ActivityBlock {activity} containerElement={timelineContainer} {onActivityClick} {onActivityUpdate} />
 			{/each}
 		</div>
 	</div>

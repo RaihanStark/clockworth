@@ -11,6 +11,19 @@ import (
 	"github.com/google/uuid"
 )
 
+type Activity struct {
+	ID           uuid.UUID    `json:"id"`
+	UserID       uuid.UUID    `json:"user_id"`
+	Title        string       `json:"title"`
+	StartTime    time.Time    `json:"start_time"`
+	EndTime      time.Time    `json:"end_time"`
+	Category     string       `json:"category"`
+	Roi          string       `json:"roi"`
+	ActivityDate time.Time    `json:"activity_date"`
+	CreatedAt    sql.NullTime `json:"created_at"`
+	UpdatedAt    sql.NullTime `json:"updated_at"`
+}
+
 type SchemaMigration struct {
 	Version string `json:"version"`
 }
