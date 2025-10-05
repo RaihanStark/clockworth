@@ -12,6 +12,7 @@
 		onClose: () => void;
 		onActivityAdded?: (activity: Activity) => void;
 		onActivityUpdated?: (activity: Activity) => void;
+		onActivityDeleted?: (id: string) => void;
 	}
 
 	let {
@@ -21,7 +22,8 @@
 		initialEndTime,
 		onClose,
 		onActivityAdded,
-		onActivityUpdated
+		onActivityUpdated,
+		onActivityDeleted
 	}: Props = $props();
 
 	let isOpen = $state(true);
@@ -30,8 +32,10 @@
 
 	let formData = $state({
 		title: activity?.title || '',
-		startTime: activity?.startTime || initialStartTime || `${String(initialHour).padStart(2, '0')}:00`,
-		endTime: activity?.endTime || initialEndTime || `${String(initialHour + 1).padStart(2, '0')}:00`,
+		startTime:
+			activity?.startTime || initialStartTime || `${String(initialHour).padStart(2, '0')}:00`,
+		endTime:
+			activity?.endTime || initialEndTime || `${String(initialHour + 1).padStart(2, '0')}:00`,
 		category: activity?.category || 'Development',
 		roi: (activity?.roi || 'Neutral') as ROICategory
 	});
@@ -135,6 +139,22 @@
 		}
 	}
 
+	async function handleDelete() {
+		if (!activity) return;
+
+		const confirmed = confirm('Are you sure you want to delete this activity?');
+		if (!confirmed) return;
+
+		try {
+			await api.deleteActivity(activity.id);
+			onActivityDeleted?.(activity.id);
+			closeModal();
+		} catch (error) {
+			console.error('Failed to delete activity:', error);
+			// You could show an error message to the user here
+		}
+	}
+
 	function closeModal() {
 		isOpen = false;
 		setTimeout(onClose, 200); // Allow animation to complete
@@ -193,7 +213,9 @@
 			: 'scale-90 opacity-0'}"
 	>
 		<!-- Header -->
-		<div class="relative overflow-hidden bg-gradient-to-r from-emerald-500 to-emerald-600 px-8 py-6 text-white">
+		<div
+			class="relative overflow-hidden bg-gradient-to-r from-emerald-500 to-emerald-600 px-8 py-6 text-white"
+		>
 			<div class="relative z-10">
 				<div class="mb-2 flex items-center gap-2">
 					<Calendar size={24} />
@@ -225,7 +247,10 @@
 		>
 			<!-- Title -->
 			<div>
-				<label for="title" class="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-700">
+				<label
+					for="title"
+					class="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-700"
+				>
 					<Tag size={16} />
 					Activity Title <span class="text-red-500">*</span>
 				</label>
@@ -237,19 +262,25 @@
 					placeholder="e.g., Deep Work Session"
 				/>
 				{#if errors.title}
-					<p class="mt-2 flex items-center gap-1 text-sm font-medium text-red-500">⚠️ {errors.title}</p>
+					<p class="mt-2 flex items-center gap-1 text-sm font-medium text-red-500">
+						⚠️ {errors.title}
+					</p>
 				{/if}
 			</div>
 
 			<!-- Time -->
 			<div>
-				<label class="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-700">
+				<label
+					class="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-700"
+				>
 					<Clock size={16} />
 					Time Range
 				</label>
 				<div class="grid grid-cols-2 gap-4">
 					<div>
-						<label for="startTime" class="mb-1 block text-xs font-semibold text-slate-500">Start Time</label>
+						<label for="startTime" class="mb-1 block text-xs font-semibold text-slate-500"
+							>Start Time</label
+						>
 						<input
 							id="startTime"
 							type="time"
@@ -258,7 +289,9 @@
 						/>
 					</div>
 					<div>
-						<label for="endTime" class="mb-1 block text-xs font-semibold text-slate-500">End Time</label>
+						<label for="endTime" class="mb-1 block text-xs font-semibold text-slate-500"
+							>End Time</label
+						>
 						<input
 							id="endTime"
 							type="time"
@@ -268,13 +301,17 @@
 					</div>
 				</div>
 				{#if errors.time}
-					<p class="mt-2 flex items-center gap-1 text-sm font-medium text-red-500">⚠️ {errors.time}</p>
+					<p class="mt-2 flex items-center gap-1 text-sm font-medium text-red-500">
+						⚠️ {errors.time}
+					</p>
 				{/if}
 			</div>
 
 			<!-- Category -->
 			<div>
-				<label class="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-700">
+				<label
+					class="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-700"
+				>
 					<Target size={16} />
 					Category
 				</label>
@@ -283,12 +320,17 @@
 						<button
 							type="button"
 							onclick={() => (formData.category = cat.name)}
-							class="flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all {formData.category === cat.name
+							class="flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all {formData.category ===
+							cat.name
 								? 'border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/20'
 								: 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'}"
 						>
 							<span class="text-2xl">{cat.icon}</span>
-							<span class="text-xs font-bold {formData.category === cat.name ? 'text-emerald-700' : 'text-slate-600'}">{cat.name}</span>
+							<span
+								class="text-xs font-bold {formData.category === cat.name
+									? 'text-emerald-700'
+									: 'text-slate-600'}">{cat.name}</span
+							>
 						</button>
 					{/each}
 				</div>
@@ -296,7 +338,9 @@
 
 			<!-- ROI -->
 			<div>
-				<label class="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-700">
+				<label
+					class="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-700"
+				>
 					<Target size={16} />
 					ROI Impact
 				</label>
@@ -305,7 +349,8 @@
 						<button
 							type="button"
 							onclick={() => (formData.roi = roi.value)}
-							class="group relative flex w-full items-center gap-4 overflow-hidden rounded-xl border-2 p-4 text-left transition-all {formData.roi === roi.value
+							class="group relative flex w-full items-center gap-4 overflow-hidden rounded-xl border-2 p-4 text-left transition-all {formData.roi ===
+							roi.value
 								? roi.value === 'High'
 									? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-emerald-100 shadow-lg shadow-emerald-500/20'
 									: roi.value === 'Neutral'
@@ -315,21 +360,27 @@
 						>
 							<span class="text-2xl">{roi.icon}</span>
 							<div class="flex-1">
-								<p class="font-bold {formData.roi === roi.value
-									? roi.value === 'High'
-										? 'text-emerald-700'
-										: roi.value === 'Neutral'
-											? 'text-slate-700'
-											: 'text-red-700'
-									: 'text-slate-700'}">{roi.label}</p>
+								<p
+									class="font-bold {formData.roi === roi.value
+										? roi.value === 'High'
+											? 'text-emerald-700'
+											: roi.value === 'Neutral'
+												? 'text-slate-700'
+												: 'text-red-700'
+										: 'text-slate-700'}"
+								>
+									{roi.label}
+								</p>
 								<p class="text-xs text-slate-500">{roi.description}</p>
 							</div>
 							{#if formData.roi === roi.value}
-								<div class="flex h-6 w-6 items-center justify-center rounded-full {roi.value === 'High'
-									? 'bg-emerald-500'
-									: roi.value === 'Neutral'
-										? 'bg-slate-500'
-										: 'bg-red-500'} text-white">
+								<div
+									class="flex h-6 w-6 items-center justify-center rounded-full {roi.value === 'High'
+										? 'bg-emerald-500'
+										: roi.value === 'Neutral'
+											? 'bg-slate-500'
+											: 'bg-red-500'} text-white"
+								>
 									✓
 								</div>
 							{/if}
@@ -337,6 +388,19 @@
 					{/each}
 				</div>
 			</div>
+
+			<!-- Delete Button (for editing) -->
+			{#if activity}
+				<div class="pt-4">
+					<button
+						type="button"
+						onclick={handleDelete}
+						class="w-full text-center text-sm font-medium text-red-600 transition-colors hover:text-red-700 hover:underline"
+					>
+						Delete Activity
+					</button>
+				</div>
+			{/if}
 
 			<!-- Actions -->
 			<div class="flex gap-3 pt-4">
