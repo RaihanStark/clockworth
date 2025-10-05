@@ -192,7 +192,8 @@ class ApiClient {
 		});
 
 		if (!response.ok) {
-			throw new Error('Failed to create activity');
+			const errorData = await response.json().catch(() => ({ message: 'Failed to create activity' }));
+			throw new Error(errorData.message || 'Failed to create activity');
 		}
 
 		return await response.json();
@@ -207,7 +208,8 @@ class ApiClient {
 		});
 
 		if (!response.ok) {
-			throw new Error('Failed to update activity');
+			const errorData = await response.json().catch(() => ({ message: 'Failed to update activity' }));
+			throw new Error(errorData.message || 'Failed to update activity');
 		}
 
 		return await response.json();

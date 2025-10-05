@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -156,6 +157,28 @@ func (h *ActivitiesHandler) CreateActivity(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid activity_date format, expected YYYY-MM-DD")
 	}
 
+	fmt.Println("startTime", startTime)
+	fmt.Println("endTime", endTime)
+	fmt.Println("activityDate", activityDate)
+
+	// Check for time overlap
+	hasOverlap, err := h.queries.CheckActivityOverlap(c.Request().Context(), database.CheckActivityOverlapParams{
+		UserID:       user.ID,
+		ActivityDate: activityDate,
+		Column3:      endTime,   // $3 = new_end_time for overlap check
+		Column4:      startTime, // $4 = new_start_time for overlap check
+	})
+	if err != nil {
+		fmt.Println("err", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to check activity overlap")
+	}
+
+	if hasOverlap {
+		return echo.NewHTTPError(http.StatusConflict, "activity time overlaps with an existing activity")
+	}
+
+	fmt.Println("hasOverlap", hasOverlap)
+
 	activity, err := h.queries.CreateActivity(c.Request().Context(), database.CreateActivityParams{
 		UserID:       user.ID,
 		Title:        req.Title,
@@ -214,6 +237,22 @@ func (h *ActivitiesHandler) UpdateActivity(c echo.Context) error {
 	endTime, err := time.Parse("15:04", req.EndTime)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid end_time format, expected HH:MM")
+	}
+
+	// Check for time overlap with other activities (excluding this one)
+	hasOverlap, err := h.queries.CheckActivityOverlapExcludingID(c.Request().Context(), database.CheckActivityOverlapExcludingIDParams{
+		UserID:       user.ID,
+		ActivityDate: existingActivity.ActivityDate,
+		ID:           id,
+		Column4:      endTime,   // $4 = new_end_time for overlap check
+		Column5:      startTime, // $5 = new_start_time for overlap check
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to check activity overlap")
+	}
+
+	if hasOverlap {
+		return echo.NewHTTPError(http.StatusConflict, "activity time overlaps with an existing activity")
 	}
 
 	activity, err := h.queries.UpdateActivity(c.Request().Context(), database.UpdateActivityParams{

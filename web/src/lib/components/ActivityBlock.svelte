@@ -162,6 +162,9 @@
 			})
 			.catch((error) => {
 				console.error('Failed to update activity:', error);
+				if (error.message && error.message.includes('overlap')) {
+					alert('Cannot move activity: Time slot overlaps with another activity');
+				}
 			});
 	}
 
@@ -247,6 +250,9 @@
 			})
 			.catch((error) => {
 				console.error('Failed to update activity:', error);
+				if (error.message && error.message.includes('overlap')) {
+					alert('Cannot resize activity: Time slot overlaps with another activity');
+				}
 			});
 
 		resizeMode = null;
