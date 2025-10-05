@@ -72,8 +72,13 @@
 		const startMinutes = Math.round((startY / 2400) * 24 * 60);
 		const endMinutes = Math.round((endY / 2400) * 24 * 60);
 
-		const roundedStart = Math.round(startMinutes / 15) * 15;
-		const roundedEnd = Math.round(endMinutes / 15) * 15;
+		let roundedStart = Math.round(startMinutes / 15) * 15;
+		let roundedEnd = Math.round(endMinutes / 15) * 15;
+
+		// Enforce boundaries (0:00 to 23:59)
+		const maxMinutes = 24 * 60 - 1; // 1439 minutes = 23:59
+		roundedStart = Math.max(0, Math.min(roundedStart, maxMinutes));
+		roundedEnd = Math.max(0, Math.min(roundedEnd, maxMinutes));
 
 		const finalEnd = roundedEnd <= roundedStart ? roundedStart + 15 : roundedEnd;
 

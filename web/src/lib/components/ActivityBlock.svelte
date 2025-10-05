@@ -125,7 +125,8 @@
 		const duration = originalEnd - originalStart;
 
 		// Enforce boundaries (0:00 to 23:59)
-		const maxStartMinutes = 24 * 60 - duration; // Max start time to keep end within bounds
+		const maxMinutes = 24 * 60 - 1; // 1439 minutes = 23:59
+		const maxStartMinutes = maxMinutes - duration; // Max start time to keep end within 23:59
 		roundedStart = Math.max(0, Math.min(roundedStart, maxStartMinutes));
 
 		const newEndMinutes = roundedStart + duration;
@@ -196,7 +197,7 @@
 			const startMinutes = timeToMinutes(originalStartTime);
 
 			// Enforce boundaries (23:59 maximum, maintain 15-minute minimum duration)
-			const maxEndMinutes = 24 * 60; // 1440 minutes = 24:00
+			const maxEndMinutes = 24 * 60 - 1; // 1439 minutes = 23:59
 			newEndMinutes = Math.max(startMinutes + 15, Math.min(newEndMinutes, maxEndMinutes));
 
 			const endHour = Math.floor(newEndMinutes / 60);
