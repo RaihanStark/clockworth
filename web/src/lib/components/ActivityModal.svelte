@@ -6,10 +6,12 @@
 	interface Props {
 		activity?: Activity | null;
 		initialHour?: number;
+		initialStartTime?: string;
+		initialEndTime?: string;
 		onClose: () => void;
 	}
 
-	let { activity = null, initialHour = 9, onClose }: Props = $props();
+	let { activity = null, initialHour = 9, initialStartTime, initialEndTime, onClose }: Props = $props();
 
 	let isOpen = $state(true);
 	let modalElement: HTMLDivElement;
@@ -17,8 +19,8 @@
 
 	let formData = $state({
 		title: activity?.title || '',
-		startTime: activity?.startTime || `${String(initialHour).padStart(2, '0')}:00`,
-		endTime: activity?.endTime || `${String(initialHour + 1).padStart(2, '0')}:00`,
+		startTime: activity?.startTime || initialStartTime || `${String(initialHour).padStart(2, '0')}:00`,
+		endTime: activity?.endTime || initialEndTime || `${String(initialHour + 1).padStart(2, '0')}:00`,
 		category: activity?.category || 'Development',
 		roi: (activity?.roi || 'Neutral') as ROICategory
 	});

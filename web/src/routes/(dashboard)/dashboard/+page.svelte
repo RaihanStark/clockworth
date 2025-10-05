@@ -8,15 +8,19 @@
 	let selectedActivity = $state<Activity | null>(null);
 	let showModal = $state(false);
 	let initialHour = $state(9);
+	let initialStartTime = $state<string | undefined>(undefined);
+	let initialEndTime = $state<string | undefined>(undefined);
 
 	function handleActivityClick(activity: Activity) {
 		selectedActivity = activity;
 		showModal = true;
 	}
 
-	function handleAddActivity(hour: number) {
+	function handleAddActivity(hour: number, startTime?: string, endTime?: string) {
 		selectedActivity = null;
 		initialHour = hour;
+		initialStartTime = startTime;
+		initialEndTime = endTime;
 		showModal = true;
 	}
 
@@ -95,6 +99,8 @@
 	<ActivityModal
 		activity={selectedActivity}
 		initialHour={initialHour}
+		initialStartTime={initialStartTime}
+		initialEndTime={initialEndTime}
 		onClose={handleCloseModal}
 	/>
 {/if}

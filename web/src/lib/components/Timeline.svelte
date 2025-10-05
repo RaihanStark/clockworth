@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { activities, type Activity } from '$lib/stores/activities';
-	import { Plus, Clock } from '@lucide/svelte';
+	import { Clock } from '@lucide/svelte';
 	import { onMount, onDestroy } from 'svelte';
 
 	interface Props {
 		onActivityClick: (activity: Activity) => void;
-		onAddActivity: (hour: number) => void;
+		onAddActivity: (hour: number, startTime?: string, endTime?: string) => void;
 	}
 
 	let { onActivityClick, onAddActivity }: Props = $props();
@@ -13,6 +13,12 @@
 	const hours = Array.from({ length: 24 }, (_, i) => i);
 	let currentTimePosition = $state(0);
 	let intervalId: number;
+
+	// Drag selection state
+	let isDragging = $state(false);
+	let dragStartY = $state(0);
+	let dragCurrentY = $state(0);
+	let timelineContainer: HTMLDivElement;
 
 	function updateCurrentTime() {
 		const now = new Date();
@@ -70,12 +76,6 @@
 		}
 	}
 
-	function formatHour(hour: number): string {
-		const period = hour >= 12 ? 'PM' : 'AM';
-		const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-		return `${displayHour} ${period}`;
-	}
-
 	function getDuration(activity: Activity): string {
 		const start = timeToMinutes(activity.startTime);
 		const end = timeToMinutes(activity.endTime);
@@ -86,20 +86,117 @@
 		if (hours > 0) return `${hours}h`;
 		return `${mins}m`;
 	}
+
+	// Drag selection functions
+	function handleMouseDown(e: MouseEvent) {
+		// Only start drag on the timeline grid, not on activities or buttons
+		const target = e.target as HTMLElement;
+		if (target.closest('button') || target.closest('[role="button"]')) {
+			return;
+		}
+
+		e.preventDefault(); // Prevent text selection
+		isDragging = true;
+		const rect = timelineContainer.getBoundingClientRect();
+		dragStartY = e.clientY - rect.top + timelineContainer.scrollTop;
+		dragCurrentY = dragStartY;
+	}
+
+	function handleMouseMove(e: MouseEvent) {
+		if (!isDragging) return;
+
+		const rect = timelineContainer.getBoundingClientRect();
+		dragCurrentY = e.clientY - rect.top + timelineContainer.scrollTop;
+	}
+
+	function handleMouseUp(e: MouseEvent) {
+		if (!isDragging) return;
+
+		isDragging = false;
+
+		const startY = Math.min(dragStartY, dragCurrentY);
+		const endY = Math.max(dragStartY, dragCurrentY);
+
+		// Convert Y positions to time
+		const startMinutes = Math.round((startY / 2400) * 24 * 60);
+		const endMinutes = Math.round((endY / 2400) * 24 * 60);
+
+		// Round to nearest 15 minutes
+		const roundedStart = Math.round(startMinutes / 15) * 15;
+		const roundedEnd = Math.round(endMinutes / 15) * 15;
+
+		// Ensure minimum 15 minutes duration
+		const finalEnd = roundedEnd <= roundedStart ? roundedStart + 15 : roundedEnd;
+
+		// Format times
+		const startHour = Math.floor(roundedStart / 60);
+		const startMin = roundedStart % 60;
+		const endHour = Math.floor(finalEnd / 60);
+		const endMin = finalEnd % 60;
+
+		const startTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
+		const endTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+
+		// Create activity with selected time range
+		onAddActivity(startHour, startTime, endTime);
+	}
+
+	// Computed selection position for visual feedback
+	const selectionStyle = $derived.by(() => {
+		if (!isDragging) return { display: 'none' };
+
+		const startY = Math.min(dragStartY, dragCurrentY);
+		const endY = Math.max(dragStartY, dragCurrentY);
+		const height = endY - startY;
+
+		return {
+			top: `${startY}px`,
+			height: `${height}px`,
+			display: 'block'
+		};
+	});
 </script>
 
-<div class="relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-xl">
-	<div class="sticky top-0 z-10 border-b-2 border-slate-200 bg-gradient-to-r from-white to-slate-50 px-6 py-5">
+<div
+	class="relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-xl"
+>
+	<div
+		class="sticky top-0 z-10 border-b-2 border-slate-200 bg-gradient-to-r from-white to-slate-50 px-6 py-5"
+	>
 		<div class="flex items-center gap-3">
-			<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+			<div
+				class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white"
+			>
 				<Clock size={20} />
 			</div>
 			<h2 class="text-2xl font-black text-slate-900">Today's Timeline</h2>
 		</div>
 	</div>
 
-	<div class="relative flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 to-white">
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<div
+		class="relative flex-1 select-none overflow-y-auto bg-gradient-to-br from-slate-50 to-white"
+		bind:this={timelineContainer}
+		onmousedown={handleMouseDown}
+		onmousemove={handleMouseMove}
+		onmouseup={handleMouseUp}
+		onmouseleave={() => {
+			isDragging = false;
+		}}
+		style="cursor: {isDragging
+			? 'grabbing'
+			: 'default'}; user-select: none; -webkit-user-select: none;"
+		role="application"
+		aria-label="Timeline drag to create activity"
+	>
 		<div class="relative min-h-[2400px]">
+			<!-- Drag Selection Overlay -->
+			{#if isDragging}
+				<div
+					class="z-25 pointer-events-none absolute left-24 right-4 rounded-lg border-2 border-emerald-500 bg-emerald-500/20"
+					style="top: {selectionStyle.top}; height: {selectionStyle.height};"
+				></div>
+			{/if}
 			<!-- Current Time Indicator -->
 			<div
 				class="absolute left-0 right-0 z-30 flex items-center"
@@ -114,36 +211,20 @@
 			<!-- Hour grid -->
 			{#each hours as hour}
 				<div
-					class="group absolute left-0 right-0 flex h-[100px] cursor-pointer border-b border-slate-200/70 transition-all hover:bg-emerald-50/50"
+					class="absolute left-0 right-0 flex h-[100px] border-b border-slate-200/70"
 					style="top: {(hour / 24) * 2400}px"
-					role="button"
-					tabindex="0"
-					onclick={() => onAddActivity(hour)}
-					onkeydown={(e) => {
-						if (e.key === 'Enter' || e.key === ' ') {
-							e.preventDefault();
-							onAddActivity(hour);
-						}
-					}}
 				>
 					<div class="w-24 flex-shrink-0 border-r-2 border-slate-200 px-4 py-3">
 						<div class="text-center">
-							<span class="block text-lg font-bold text-slate-700">{hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}</span>
-							<span class="block text-xs font-semibold uppercase text-slate-400">{hour >= 12 ? 'PM' : 'AM'}</span>
+							<span class="block text-lg font-bold text-slate-700"
+								>{hour === 0 ? 12 : hour > 12 ? hour - 12 : hour}</span
+							>
+							<span class="block text-xs font-semibold uppercase text-slate-400"
+								>{hour >= 12 ? 'PM' : 'AM'}</span
+							>
 						</div>
 					</div>
-					<div class="relative flex-1 px-2">
-						<button
-							class="absolute right-4 top-3 hidden rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 p-2 text-white shadow-lg shadow-emerald-500/30 transition-all hover:scale-110 group-hover:block"
-							onclick={(e) => {
-								e.stopPropagation();
-								onAddActivity(hour);
-							}}
-							aria-label="Add activity at {formatHour(hour)}"
-						>
-							<Plus size={18} />
-						</button>
-					</div>
+					<div class="relative flex-1 px-2"></div>
 				</div>
 			{/each}
 
@@ -164,7 +245,9 @@
 							<div class="flex-1">
 								<div class="mb-1 flex items-center gap-2">
 									<span class="text-lg">{icon}</span>
-									<p class="truncate text-base font-bold text-white drop-shadow-sm">{activity.title}</p>
+									<p class="truncate text-base font-bold text-white drop-shadow-sm">
+										{activity.title}
+									</p>
 								</div>
 								<div class="flex items-center gap-3 text-xs text-white/90">
 									<span class="font-semibold">{activity.startTime} - {activity.endTime}</span>
@@ -172,8 +255,13 @@
 								</div>
 							</div>
 							<div class="flex flex-col items-end gap-1">
-								<span class="rounded-lg bg-white/25 px-2 py-1 text-xs font-bold uppercase tracking-wide text-white">{activity.roi}</span>
-								<span class="rounded-lg bg-white/20 px-2 py-0.5 text-xs font-medium text-white/80">{activity.category}</span>
+								<span
+									class="rounded-lg bg-white/25 px-2 py-1 text-xs font-bold uppercase tracking-wide text-white"
+									>{activity.roi}</span
+								>
+								<span class="rounded-lg bg-white/20 px-2 py-0.5 text-xs font-medium text-white/80"
+									>{activity.category}</span
+								>
 							</div>
 						</div>
 					</div>
