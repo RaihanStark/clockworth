@@ -1,14 +1,15 @@
 <script lang="ts">
-	import type { Activity } from '$lib/stores/activities';
-	import { activities } from '$lib/stores/activities';
+	import type { Activity } from '$lib/types';
+	import { api } from '$lib/api';
 
 	interface Props {
 		activity: Activity;
 		containerElement: HTMLElement | null;
 		onActivityClick: (activity: Activity) => void;
+		onActivityUpdate: (activity: Activity) => void;
 	}
 
-	let { activity, containerElement, onActivityClick }: Props = $props();
+	let { activity, containerElement, onActivityClick, onActivityUpdate }: Props = $props();
 
 	// Drag state
 	let isDragging = $state(false);
@@ -139,10 +140,29 @@
 		const newStartTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
 		const newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
 
-		activities.update(activity.id, {
-			startTime: newStartTime,
-			endTime: newEndTime
-		});
+		// Update activity via API
+		api
+			.updateActivity(activity.id, {
+				title: activity.title,
+				start_time: newStartTime,
+				end_time: newEndTime,
+				category: activity.category,
+				roi: activity.roi
+			})
+			.then((apiActivity) => {
+				const updatedActivity: Activity = {
+					id: apiActivity.id,
+					title: apiActivity.title,
+					startTime: apiActivity.start_time,
+					endTime: apiActivity.end_time,
+					category: apiActivity.category,
+					roi: apiActivity.roi as 'High' | 'Neutral' | 'Waste'
+				};
+				onActivityUpdate(updatedActivity);
+			})
+			.catch((error) => {
+				console.error('Failed to update activity:', error);
+			});
 	}
 
 	// Resize handlers
@@ -205,10 +225,29 @@
 			newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
 		}
 
-		activities.update(activity.id, {
-			startTime: newStartTime,
-			endTime: newEndTime
-		});
+		// Update activity via API
+		api
+			.updateActivity(activity.id, {
+				title: activity.title,
+				start_time: newStartTime,
+				end_time: newEndTime,
+				category: activity.category,
+				roi: activity.roi
+			})
+			.then((apiActivity) => {
+				const updatedActivity: Activity = {
+					id: apiActivity.id,
+					title: apiActivity.title,
+					startTime: apiActivity.start_time,
+					endTime: apiActivity.end_time,
+					category: apiActivity.category,
+					roi: apiActivity.roi as 'High' | 'Neutral' | 'Waste'
+				};
+				onActivityUpdate(updatedActivity);
+			})
+			.catch((error) => {
+				console.error('Failed to update activity:', error);
+			});
 
 		resizeMode = null;
 	}

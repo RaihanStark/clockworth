@@ -49,6 +49,7 @@ func main() {
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(queries, googleOAuth, cfg)
 	settingsHandler := handlers.NewSettingsHandler(queries)
+	activitiesHandler := handlers.NewActivitiesHandler(queries)
 
 	// Setup Echo
 	e := echo.New()
@@ -77,6 +78,13 @@ func main() {
 	// Settings routes
 	protected.GET("/settings", settingsHandler.GetSettings)
 	protected.PUT("/settings/hourly-worth", settingsHandler.UpdateHourlyWorth)
+
+	// Activities routes
+	protected.GET("/activities", activitiesHandler.ListActivities)
+	protected.GET("/activities/:id", activitiesHandler.GetActivity)
+	protected.POST("/activities", activitiesHandler.CreateActivity)
+	protected.PUT("/activities/:id", activitiesHandler.UpdateActivity)
+	protected.DELETE("/activities/:id", activitiesHandler.DeleteActivity)
 
 	// Start server
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%s", cfg.Port)))

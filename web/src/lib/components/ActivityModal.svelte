@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { activities, type Activity, type ROICategory } from '$lib/stores/activities';
+	import type { Activity, ROICategory } from '$lib/types';
+	import { api } from '$lib/api';
 	import { X, Clock, Tag, Target, Calendar } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
@@ -9,9 +10,19 @@
 		initialStartTime?: string;
 		initialEndTime?: string;
 		onClose: () => void;
+		onActivityAdded?: (activity: Activity) => void;
+		onActivityUpdated?: (activity: Activity) => void;
 	}
 
-	let { activity = null, initialHour = 9, initialStartTime, initialEndTime, onClose }: Props = $props();
+	let {
+		activity = null,
+		initialHour = 9,
+		initialStartTime,
+		initialEndTime,
+		onClose,
+		onActivityAdded,
+		onActivityUpdated
+	}: Props = $props();
 
 	let isOpen = $state(true);
 	let modalElement: HTMLDivElement;
@@ -70,20 +81,58 @@
 		return h * 60 + m;
 	}
 
-	function handleSubmit() {
+	async function handleSubmit() {
 		if (!validateForm()) return;
 
-		if (activity) {
-			activities.update(activity.id, formData);
-		} else {
-			const newActivity: Activity = {
-				id: Date.now().toString(),
-				...formData
-			};
-			activities.add(newActivity);
-		}
+		try {
+			if (activity) {
+				// Update existing activity
+				const apiActivity = await api.updateActivity(activity.id, {
+					title: formData.title,
+					start_time: formData.startTime,
+					end_time: formData.endTime,
+					category: formData.category,
+					roi: formData.roi
+				});
 
-		closeModal();
+				const updatedActivity: Activity = {
+					id: apiActivity.id,
+					title: apiActivity.title,
+					startTime: apiActivity.start_time,
+					endTime: apiActivity.end_time,
+					category: apiActivity.category,
+					roi: apiActivity.roi as ROICategory
+				};
+
+				onActivityUpdated?.(updatedActivity);
+			} else {
+				// Create new activity
+				const today = new Date().toISOString().split('T')[0];
+				const apiActivity = await api.createActivity({
+					title: formData.title,
+					start_time: formData.startTime,
+					end_time: formData.endTime,
+					category: formData.category,
+					roi: formData.roi,
+					activity_date: today
+				});
+
+				const newActivity: Activity = {
+					id: apiActivity.id,
+					title: apiActivity.title,
+					startTime: apiActivity.start_time,
+					endTime: apiActivity.end_time,
+					category: apiActivity.category,
+					roi: apiActivity.roi as ROICategory
+				};
+
+				onActivityAdded?.(newActivity);
+			}
+			closeModal();
+		} catch (error) {
+			console.error('Failed to save activity:', error);
+			// You could show an error message to the user here
+		}
 	}
 
 	function closeModal() {

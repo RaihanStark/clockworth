@@ -26,6 +26,35 @@ export interface UpdateHourlyWorthRequest {
 	hourly_worth: number;
 }
 
+export interface Activity {
+	id: string;
+	title: string;
+	start_time: string; // HH:MM format
+	end_time: string; // HH:MM format
+	category: string;
+	roi: string;
+	activity_date: string; // YYYY-MM-DD format
+	created_at: string;
+	updated_at: string;
+}
+
+export interface CreateActivityRequest {
+	title: string;
+	start_time: string;
+	end_time: string;
+	category: string;
+	roi: string;
+	activity_date: string;
+}
+
+export interface UpdateActivityRequest {
+	title: string;
+	start_time: string;
+	end_time: string;
+	category: string;
+	roi: string;
+}
+
 class ApiClient {
 	private baseUrl: string;
 
@@ -123,6 +152,77 @@ class ApiClient {
 		}
 
 		return await response.json();
+	}
+
+	// Activities API
+	async getActivities(date: string): Promise<Activity[]> {
+		const response = await fetch(`${this.baseUrl}/api/activities?date=${date}`, {
+			method: 'GET',
+			headers: this.getHeaders(),
+			credentials: 'include'
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to get activities');
+		}
+
+		return await response.json();
+	}
+
+	async getActivity(id: string): Promise<Activity> {
+		const response = await fetch(`${this.baseUrl}/api/activities/${id}`, {
+			method: 'GET',
+			headers: this.getHeaders(),
+			credentials: 'include'
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to get activity');
+		}
+
+		return await response.json();
+	}
+
+	async createActivity(request: CreateActivityRequest): Promise<Activity> {
+		const response = await fetch(`${this.baseUrl}/api/activities`, {
+			method: 'POST',
+			headers: this.getHeaders(),
+			credentials: 'include',
+			body: JSON.stringify(request)
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to create activity');
+		}
+
+		return await response.json();
+	}
+
+	async updateActivity(id: string, request: UpdateActivityRequest): Promise<Activity> {
+		const response = await fetch(`${this.baseUrl}/api/activities/${id}`, {
+			method: 'PUT',
+			headers: this.getHeaders(),
+			credentials: 'include',
+			body: JSON.stringify(request)
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to update activity');
+		}
+
+		return await response.json();
+	}
+
+	async deleteActivity(id: string): Promise<void> {
+		const response = await fetch(`${this.baseUrl}/api/activities/${id}`, {
+			method: 'DELETE',
+			headers: this.getHeaders(),
+			credentials: 'include'
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to delete activity');
+		}
 	}
 }
 

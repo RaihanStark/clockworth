@@ -1,7 +1,13 @@
 <script lang="ts">
-	import { activities, type Activity } from '$lib/stores/activities';
+	import type { Activity } from '$lib/types';
 	import { settings } from '$lib/stores/settings';
 	import { TrendingUp, TrendingDown, Clock, Target, Calendar } from '@lucide/svelte';
+
+	interface Props {
+		activities: Activity[];
+	}
+
+	let { activities }: Props = $props();
 
 	interface ROIBreakdown {
 		High: number;
@@ -13,7 +19,7 @@
 		let total = 0;
 		const hourlyRate = $settings.hourlyWorth;
 
-		for (const activity of $activities) {
+		for (const activity of activities) {
 			const duration = getDuration(activity);
 			const multiplier = getMultiplier(activity.roi);
 			total += duration * hourlyRate * multiplier;
@@ -25,7 +31,7 @@
 	const roiBreakdown = $derived.by(() => {
 		const breakdown: ROIBreakdown = { High: 0, Neutral: 0, Waste: 0 };
 
-		for (const activity of $activities) {
+		for (const activity of activities) {
 			const duration = getDuration(activity);
 			breakdown[activity.roi] += duration;
 		}

@@ -15,6 +15,24 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: activities; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.activities (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    title character varying(255) NOT NULL,
+    start_time time without time zone NOT NULL,
+    end_time time without time zone NOT NULL,
+    category character varying(100) NOT NULL,
+    roi character varying(50) NOT NULL,
+    activity_date date NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -50,6 +68,14 @@ CREATE TABLE public.users (
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     hourly_worth numeric(10,2) DEFAULT 0.00
 );
+
+
+--
+-- Name: activities activities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.activities
+    ADD CONSTRAINT activities_pkey PRIMARY KEY (id);
 
 
 --
@@ -101,6 +127,27 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: idx_activities_activity_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_activities_activity_date ON public.activities USING btree (activity_date);
+
+
+--
+-- Name: idx_activities_user_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_activities_user_date ON public.activities USING btree (user_id, activity_date);
+
+
+--
+-- Name: idx_activities_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_activities_user_id ON public.activities USING btree (user_id);
+
+
+--
 -- Name: idx_sessions_expires_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -136,6 +183,14 @@ CREATE INDEX idx_users_google_id ON public.users USING btree (google_id);
 
 
 --
+-- Name: activities activities_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.activities
+    ADD CONSTRAINT activities_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: sessions sessions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -155,4 +210,5 @@ ALTER TABLE ONLY public.sessions
 INSERT INTO public.schema_migrations (version) VALUES
     ('20251004'),
     ('20251005'),
-    ('20251006');
+    ('20251006'),
+    ('20251007');
