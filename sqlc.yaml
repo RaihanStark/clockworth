@@ -1,6 +1,6 @@
 version: "2"
 sql:
-  - schema: "db/migrations"
+  - schema: "db/schema.sql"
     queries: "db/queries"
     engine: "postgresql"
     gen:
@@ -11,3 +11,6 @@ sql:
         emit_prepared_queries: false
         emit_interface: false
         emit_exact_table_names: false
+        overrides:
+          - column: "users.hourly_worth"
+            go_type: "float64"
