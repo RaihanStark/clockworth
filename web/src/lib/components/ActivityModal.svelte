@@ -42,7 +42,8 @@
 
 	let errors = $state({
 		title: '',
-		time: ''
+		time: '',
+		overlap: ''
 	});
 
 	const categories = [
@@ -63,6 +64,7 @@
 	function validateForm(): boolean {
 		errors.title = '';
 		errors.time = '';
+		errors.overlap = '';
 
 		if (!formData.title.trim()) {
 			errors.title = 'Title is required';
@@ -133,9 +135,14 @@
 				onActivityAdded?.(newActivity);
 			}
 			closeModal();
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Failed to save activity:', error);
-			// You could show an error message to the user here
+			// Check if it's an overlap error (409 Conflict)
+			if (error.message && error.message.includes('overlap')) {
+				errors.overlap = 'This time slot overlaps with an existing activity';
+			} else {
+				errors.overlap = 'Failed to save activity. Please try again.';
+			}
 		}
 	}
 
@@ -303,6 +310,11 @@
 				{#if errors.time}
 					<p class="mt-2 flex items-center gap-1 text-sm font-medium text-red-500">
 						⚠️ {errors.time}
+					</p>
+				{/if}
+				{#if errors.overlap}
+					<p class="mt-2 flex items-center gap-1 text-sm font-medium text-red-500">
+						⚠️ {errors.overlap}
 					</p>
 				{/if}
 			</div>

@@ -12,10 +12,89 @@ import (
 	"github.com/google/uuid"
 )
 
+const checkActivityOverlap = `-- name: CheckActivityOverlap :one
+SELECT EXISTS (
+        SELECT 1
+        FROM activities
+        WHERE
+            user_id = $1
+            AND activity_date = $2
+            AND start_time < $3::TIME
+            AND end_time > $4::TIME
+    ) AS has_overlap
+`
+
+type CheckActivityOverlapParams struct {
+	UserID       uuid.UUID `json:"user_id"`
+	ActivityDate time.Time `json:"activity_date"`
+	Column3      time.Time `json:"column_3"`
+	Column4      time.Time `json:"column_4"`
+}
+
+// Check if any existing activity overlaps with new time range
+// Binding: $1=user_id, $2=activity_date, $3=new_end_time, $4=new_start_time
+// Overlap: existing.start < new.end AND existing.end > new.start
+func (q *Queries) CheckActivityOverlap(ctx context.Context, arg CheckActivityOverlapParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkActivityOverlap,
+		arg.UserID,
+		arg.ActivityDate,
+		arg.Column3,
+		arg.Column4,
+	)
+	var has_overlap bool
+	err := row.Scan(&has_overlap)
+	return has_overlap, err
+}
+
+const checkActivityOverlapExcludingID = `-- name: CheckActivityOverlapExcludingID :one
+SELECT EXISTS (
+        SELECT 1
+        FROM activities
+        WHERE
+            user_id = $1
+            AND activity_date = $2
+            AND id <> $3
+            AND start_time < $4::TIME
+            AND end_time > $5::TIME
+    ) AS has_overlap
+`
+
+type CheckActivityOverlapExcludingIDParams struct {
+	UserID       uuid.UUID `json:"user_id"`
+	ActivityDate time.Time `json:"activity_date"`
+	ID           uuid.UUID `json:"id"`
+	Column4      time.Time `json:"column_4"`
+	Column5      time.Time `json:"column_5"`
+}
+
+// Binding: $1=user_id, $2=activity_date, $3=exclude_id, $4=new_end_time, $5=new_start_time
+func (q *Queries) CheckActivityOverlapExcludingID(ctx context.Context, arg CheckActivityOverlapExcludingIDParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkActivityOverlapExcludingID,
+		arg.UserID,
+		arg.ActivityDate,
+		arg.ID,
+		arg.Column4,
+		arg.Column5,
+	)
+	var has_overlap bool
+	err := row.Scan(&has_overlap)
+	return has_overlap, err
+}
+
 const createActivity = `-- name: CreateActivity :one
-INSERT INTO activities (user_id, title, start_time, end_time, category, roi, activity_date)
+INSERT INTO
+    activities (
+        user_id,
+        title,
+        start_time,
+        end_time,
+        category,
+        roi,
+        activity_date
+    )
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, user_id, title, start_time, end_time, category, roi, activity_date, created_at, updated_at
+RETURNING
+    id, user_id, title, start_time, end_time, category, roi, activity_date, created_at, updated_at
 `
 
 type CreateActivityParams struct {
@@ -64,8 +143,11 @@ func (q *Queries) DeleteActivity(ctx context.Context, id uuid.UUID) error {
 }
 
 const getActivitiesByUserAndDate = `-- name: GetActivitiesByUserAndDate :many
-SELECT id, user_id, title, start_time, end_time, category, roi, activity_date, created_at, updated_at FROM activities
-WHERE user_id = $1 AND activity_date = $2
+SELECT id, user_id, title, start_time, end_time, category, roi, activity_date, created_at, updated_at
+FROM activities
+WHERE
+    user_id = $1
+    AND activity_date = $2
 ORDER BY start_time ASC
 `
 
@@ -132,9 +214,17 @@ func (q *Queries) GetActivityByID(ctx context.Context, id uuid.UUID) (Activity, 
 
 const updateActivity = `-- name: UpdateActivity :one
 UPDATE activities
-SET title = $2, start_time = $3, end_time = $4, category = $5, roi = $6, updated_at = CURRENT_TIMESTAMP
-WHERE id = $1
-RETURNING id, user_id, title, start_time, end_time, category, roi, activity_date, created_at, updated_at
+SET
+    title = $2,
+    start_time = $3,
+    end_time = $4,
+    category = $5,
+    roi = $6,
+    updated_at = CURRENT_TIMESTAMP
+WHERE
+    id = $1
+RETURNING
+    id, user_id, title, start_time, end_time, category, roi, activity_date, created_at, updated_at
 `
 
 type UpdateActivityParams struct {
