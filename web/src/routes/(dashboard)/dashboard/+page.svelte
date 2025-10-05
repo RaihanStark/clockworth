@@ -134,5 +134,6 @@
 		onClose={handleCloseModal}
 		onActivityAdded={handleActivityAdded}
 		onActivityUpdated={handleActivityUpdated}
+		onActivityDeleted={handleActivityDeleted}
 	/>
 {/if}
