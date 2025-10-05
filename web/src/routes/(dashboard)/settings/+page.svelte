@@ -1,16 +1,34 @@
 <script lang="ts">
-	import { settings } from '$lib/stores/settings';
+	import { api } from '$lib/api';
 	import { DollarSign, Save } from '@lucide/svelte';
+	import type { PageData } from './$types';
 
-	let hourlyWorth = $state($settings.hourlyWorth);
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
+
+	let hourlyWorth = $state(data.hourlyWorth);
 	let saved = $state(false);
+	let loading = $state(false);
+	let error = $state('');
 
-	function handleSave() {
-		settings.update((s) => ({ ...s, hourlyWorth }));
-		saved = true;
-		setTimeout(() => {
-			saved = false;
-		}, 2000);
+	async function handleSave() {
+		try {
+			loading = true;
+			error = '';
+			await api.updateHourlyWorth(hourlyWorth);
+			saved = true;
+			setTimeout(() => {
+				saved = false;
+			}, 2000);
+		} catch (err) {
+			console.error('Failed to save settings:', err);
+			error = 'Failed to save settings. Please try again.';
+		} finally {
+			loading = false;
+		}
 	}
 </script>
 
@@ -58,15 +76,21 @@
 			<button
 				onclick={handleSave}
 				class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-4 font-bold text-white shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 hover:shadow-xl active:scale-95 disabled:opacity-50"
-				disabled={hourlyWorth === $settings.hourlyWorth}
+				disabled={hourlyWorth === data.hourlyWorth || loading}
 			>
 				<Save size={20} />
-				{saved ? 'Saved!' : 'Save Changes'}
+				{loading ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
 			</button>
 
 			{#if saved}
 				<div class="mt-4 rounded-xl bg-emerald-50 p-4 text-center">
 					<p class="font-semibold text-emerald-700">✓ Settings saved successfully!</p>
+				</div>
+			{/if}
+
+			{#if error}
+				<div class="mt-4 rounded-xl bg-red-50 p-4 text-center">
+					<p class="font-semibold text-red-700">{error}</p>
 				</div>
 			{/if}
 		</div>
