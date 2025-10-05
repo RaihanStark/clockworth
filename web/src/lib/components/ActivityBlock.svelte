@@ -118,11 +118,15 @@
 		const newTop = originalTop + deltaY;
 
 		const newStartMinutes = Math.round((newTop / 2400) * 24 * 60);
-		const roundedStart = Math.round(newStartMinutes / 15) * 15;
+		let roundedStart = Math.round(newStartMinutes / 15) * 15;
 
 		const originalStart = timeToMinutes(activity.startTime);
 		const originalEnd = timeToMinutes(activity.endTime);
 		const duration = originalEnd - originalStart;
+
+		// Enforce boundaries (0:00 to 23:59)
+		const maxStartMinutes = 24 * 60 - duration; // Max start time to keep end within bounds
+		roundedStart = Math.max(0, Math.min(roundedStart, maxStartMinutes));
 
 		const newEndMinutes = roundedStart + duration;
 
@@ -177,24 +181,27 @@
 
 		if (resizeMode === 'top') {
 			const startMinutes = timeToMinutes(originalStartTime);
-			const newStartMinutes = Math.round((startMinutes + deltaMinutes) / 15) * 15;
+			let newStartMinutes = Math.round((startMinutes + deltaMinutes) / 15) * 15;
 			const endMinutes = timeToMinutes(originalEndTime);
 
-			if (newStartMinutes < endMinutes - 15) {
-				const startHour = Math.floor(newStartMinutes / 60);
-				const startMin = newStartMinutes % 60;
-				newStartTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
-			}
+			// Enforce boundaries (0:00 minimum, maintain 15-minute minimum duration)
+			newStartMinutes = Math.max(0, Math.min(newStartMinutes, endMinutes - 15));
+
+			const startHour = Math.floor(newStartMinutes / 60);
+			const startMin = newStartMinutes % 60;
+			newStartTime = `${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}`;
 		} else {
 			const endMinutes = timeToMinutes(originalEndTime);
-			const newEndMinutes = Math.round((endMinutes + deltaMinutes) / 15) * 15;
+			let newEndMinutes = Math.round((endMinutes + deltaMinutes) / 15) * 15;
 			const startMinutes = timeToMinutes(originalStartTime);
 
-			if (newEndMinutes > startMinutes + 15) {
-				const endHour = Math.floor(newEndMinutes / 60);
-				const endMin = newEndMinutes % 60;
-				newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
-			}
+			// Enforce boundaries (23:59 maximum, maintain 15-minute minimum duration)
+			const maxEndMinutes = 24 * 60; // 1440 minutes = 24:00
+			newEndMinutes = Math.max(startMinutes + 15, Math.min(newEndMinutes, maxEndMinutes));
+
+			const endHour = Math.floor(newEndMinutes / 60);
+			const endMin = newEndMinutes % 60;
+			newEndTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
 		}
 
 		activities.update(activity.id, {
