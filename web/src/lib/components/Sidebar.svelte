@@ -169,53 +169,64 @@
 		<div class="absolute -bottom-6 -left-6 h-40 w-40 rounded-full bg-white/5"></div>
 	</div>
 
-	<!-- ROI Breakdown Cards Grid -->
-	<div class="grid grid-cols-3 gap-3">
+	<!-- ROI Breakdown Compact Cards -->
+	<div class="space-y-3 rounded-xl bg-white p-4 shadow-md">
+		<h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Time Breakdown</h3>
+
 		<!-- High ROI -->
-		<div
-			class="group relative overflow-hidden rounded-xl bg-emerald-500/10 p-4 transition-all hover:scale-105 hover:bg-emerald-500/20"
-		>
-			<div class="absolute right-2 top-2 h-8 w-8 rounded-full bg-emerald-500/20"></div>
-			<Target size={18} class="mb-2 text-emerald-600" />
-			<p class="text-2xl font-bold text-emerald-700">{roiBreakdown.High.toFixed(1)}</p>
-			<p class="text-xs font-medium text-emerald-600">High ROI</p>
-			<div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-emerald-200">
-				<div
-					class="h-full bg-emerald-600 transition-all"
-					style="width: {getPercentage(roiBreakdown.High)}%"
-				></div>
+		<div class="group flex items-center gap-3 rounded-lg bg-emerald-50 p-3 transition-all hover:bg-emerald-100">
+			<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500 shadow-sm">
+				<Target size={18} class="text-white" />
+			</div>
+			<div class="flex-1">
+				<div class="flex items-baseline justify-between">
+					<span class="text-xs font-semibold text-emerald-600">High ROI</span>
+					<span class="text-lg font-bold text-emerald-700">{roiBreakdown.High.toFixed(1)}h</span>
+				</div>
+				<div class="mt-1 h-1 w-full overflow-hidden rounded-full bg-emerald-200">
+					<div
+						class="h-full bg-emerald-600 transition-all"
+						style="width: {getPercentage(roiBreakdown.High)}%"
+					></div>
+				</div>
 			</div>
 		</div>
 
 		<!-- Neutral -->
-		<div
-			class="group relative overflow-hidden rounded-xl bg-slate-500/10 p-4 transition-all hover:scale-105 hover:bg-slate-500/20"
-		>
-			<div class="absolute right-2 top-2 h-8 w-8 rounded-full bg-slate-500/20"></div>
-			<Clock size={18} class="mb-2 text-slate-600" />
-			<p class="text-2xl font-bold text-slate-700">{roiBreakdown.Neutral.toFixed(1)}</p>
-			<p class="text-xs font-medium text-slate-600">Neutral</p>
-			<div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-				<div
-					class="h-full bg-slate-600 transition-all"
-					style="width: {getPercentage(roiBreakdown.Neutral)}%"
-				></div>
+		<div class="group flex items-center gap-3 rounded-lg bg-slate-50 p-3 transition-all hover:bg-slate-100">
+			<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-400 shadow-sm">
+				<Clock size={18} class="text-white" />
+			</div>
+			<div class="flex-1">
+				<div class="flex items-baseline justify-between">
+					<span class="text-xs font-semibold text-slate-600">Neutral</span>
+					<span class="text-lg font-bold text-slate-700">{roiBreakdown.Neutral.toFixed(1)}h</span>
+				</div>
+				<div class="mt-1 h-1 w-full overflow-hidden rounded-full bg-slate-200">
+					<div
+						class="h-full bg-slate-500 transition-all"
+						style="width: {getPercentage(roiBreakdown.Neutral)}%"
+					></div>
+				</div>
 			</div>
 		</div>
 
 		<!-- Waste -->
-		<div
-			class="group relative overflow-hidden rounded-xl bg-red-500/10 p-4 transition-all hover:scale-105 hover:bg-red-500/20"
-		>
-			<div class="absolute right-2 top-2 h-8 w-8 rounded-full bg-red-500/20"></div>
-			<TrendingDown size={18} class="mb-2 text-red-600" />
-			<p class="text-2xl font-bold text-red-700">{roiBreakdown.Waste.toFixed(1)}</p>
-			<p class="text-xs font-medium text-red-600">Waste</p>
-			<div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-red-200">
-				<div
-					class="h-full bg-red-600 transition-all"
-					style="width: {getPercentage(roiBreakdown.Waste)}%"
-				></div>
+		<div class="group flex items-center gap-3 rounded-lg bg-red-50 p-3 transition-all hover:bg-red-100">
+			<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500 shadow-sm">
+				<TrendingDown size={18} class="text-white" />
+			</div>
+			<div class="flex-1">
+				<div class="flex items-baseline justify-between">
+					<span class="text-xs font-semibold text-red-600">Waste</span>
+					<span class="text-lg font-bold text-red-700">{roiBreakdown.Waste.toFixed(1)}h</span>
+				</div>
+				<div class="mt-1 h-1 w-full overflow-hidden rounded-full bg-red-200">
+					<div
+						class="h-full bg-red-600 transition-all"
+						style="width: {getPercentage(roiBreakdown.Waste)}%"
+					></div>
+				</div>
 			</div>
 		</div>
 	</div>
