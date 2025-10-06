@@ -300,3 +300,60 @@ func (h *ActivitiesHandler) DeleteActivity(c echo.Context) error {
 
 	return c.NoContent(http.StatusNoContent)
 }
+
+type HeatmapDayResponse struct {
+	Date   string `json:"date"`
+	Status string `json:"status"` // "positive", "negative", or "neutral"
+}
+
+// GetLast30DaysHeatmap handles GET /api/activities/heatmap
+func (h *ActivitiesHandler) GetLast30DaysHeatmap(c echo.Context) error {
+	user, ok := auth.GetUserFromContext(c)
+	if !ok {
+		return echo.NewHTTPError(http.StatusUnauthorized, "user not found in context")
+	}
+
+	// Calculate date range for last 30 days (truncate to start of day to ensure today is included)
+	now := time.Now()
+	endDate := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 0, now.Location())
+	startDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, -29) // 30 days total including today
+
+	// Get heatmap data from database
+	heatmapData, err := h.queries.GetLast30DaysHeatmap(c.Request().Context(), database.GetLast30DaysHeatmapParams{
+		UserID:         user.ID,
+		ActivityDate:   startDate,
+		ActivityDate_2: endDate,
+	})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to fetch heatmap data")
+	}
+
+	// Create a map for quick lookup
+	dataMap := make(map[string]int64)
+	for _, day := range heatmapData {
+		dataMap[day.ActivityDate.Format("2006-01-02")] = day.NetRoi
+	}
+
+	// Build response for all 30 days
+	response := make([]HeatmapDayResponse, 30)
+	for i := range 30 {
+		date := startDate.AddDate(0, 0, i)
+		dateStr := date.Format("2006-01-02")
+
+		status := "neutral"
+		if netRoi, exists := dataMap[dateStr]; exists {
+			if netRoi > 0 {
+				status = "positive"
+			} else if netRoi < 0 {
+				status = "negative"
+			}
+		}
+
+		response[i] = HeatmapDayResponse{
+			Date:   dateStr,
+			Status: status,
+		}
+	}
+
+	return c.JSON(http.StatusOK, response)
+}

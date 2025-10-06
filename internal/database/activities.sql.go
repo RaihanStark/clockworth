@@ -212,6 +212,60 @@ func (q *Queries) GetActivityByID(ctx context.Context, id uuid.UUID) (Activity, 
 	return i, err
 }
 
+const getLast30DaysHeatmap = `-- name: GetLast30DaysHeatmap :many
+SELECT
+    activity_date,
+    SUM(
+        CASE
+            WHEN roi = 'High' THEN 1
+            WHEN roi = 'Waste' THEN -1
+            ELSE 0
+        END
+    ) as net_roi
+FROM activities
+WHERE
+    user_id = $1
+    AND activity_date >= $2
+    AND activity_date <= $3
+GROUP BY activity_date
+ORDER BY activity_date DESC
+`
+
+type GetLast30DaysHeatmapParams struct {
+	UserID         uuid.UUID `json:"user_id"`
+	ActivityDate   time.Time `json:"activity_date"`
+	ActivityDate_2 time.Time `json:"activity_date_2"`
+}
+
+type GetLast30DaysHeatmapRow struct {
+	ActivityDate time.Time `json:"activity_date"`
+	NetRoi       int64     `json:"net_roi"`
+}
+
+// Get heatmap data for the last 30 days showing the net ROI status for each day
+func (q *Queries) GetLast30DaysHeatmap(ctx context.Context, arg GetLast30DaysHeatmapParams) ([]GetLast30DaysHeatmapRow, error) {
+	rows, err := q.db.QueryContext(ctx, getLast30DaysHeatmap, arg.UserID, arg.ActivityDate, arg.ActivityDate_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetLast30DaysHeatmapRow
+	for rows.Next() {
+		var i GetLast30DaysHeatmapRow
+		if err := rows.Scan(&i.ActivityDate, &i.NetRoi); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateActivity = `-- name: UpdateActivity :one
 UPDATE activities
 SET
