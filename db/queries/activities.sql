@@ -67,3 +67,22 @@ SELECT EXISTS (
             AND start_time < $4::TIME
             AND end_time > $5::TIME
     ) AS has_overlap;
+
+-- name: GetLast30DaysHeatmap :many
+-- Get heatmap data for the last 30 days showing the net ROI status for each day
+SELECT
+    activity_date,
+    SUM(
+        CASE
+            WHEN roi = 'High' THEN 1
+            WHEN roi = 'Waste' THEN -1
+            ELSE 0
+        END
+    ) as net_roi
+FROM activities
+WHERE
+    user_id = $1
+    AND activity_date >= $2
+    AND activity_date <= $3
+GROUP BY activity_date
+ORDER BY activity_date DESC;

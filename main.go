@@ -81,6 +81,7 @@ func main() {
 
 	// Activities routes
 	protected.GET("/activities", activitiesHandler.ListActivities)
+	protected.GET("/activities/heatmap", activitiesHandler.GetLast30DaysHeatmap)
 	protected.GET("/activities/:id", activitiesHandler.GetActivity)
 	protected.POST("/activities", activitiesHandler.CreateActivity)
 	protected.PUT("/activities/:id", activitiesHandler.UpdateActivity)
