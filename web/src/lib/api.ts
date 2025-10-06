@@ -55,6 +55,11 @@ export interface UpdateActivityRequest {
 	roi: string;
 }
 
+export interface HeatmapDay {
+	date: string;
+	status: 'positive' | 'negative' | 'neutral';
+}
+
 class ApiClient {
 	private baseUrl: string;
 
@@ -223,6 +228,20 @@ class ApiClient {
 		if (!response.ok) {
 			throw new Error('Failed to delete activity');
 		}
+	}
+
+	async getHeatmap(): Promise<HeatmapDay[]> {
+		const response = await fetch(`${this.baseUrl}/api/activities/heatmap`, {
+			method: 'GET',
+			headers: this.getHeaders(),
+			credentials: 'include'
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to get heatmap data');
+		}
+
+		return await response.json();
 	}
 }
 

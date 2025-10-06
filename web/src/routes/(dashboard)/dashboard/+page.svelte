@@ -94,7 +94,7 @@
 				/>
 			</div>
 			<div class="col-span-1 overflow-hidden">
-				<Sidebar {activities} />
+				<Sidebar {activities} heatmapData={data.heatmapData} />
 			</div>
 		</div>
 
@@ -109,7 +109,7 @@
 				/>
 			</div>
 			<div class="h-[300px] overflow-hidden">
-				<Sidebar {activities} />
+				<Sidebar {activities} heatmapData={data.heatmapData} />
 			</div>
 		</div>
 	</div>

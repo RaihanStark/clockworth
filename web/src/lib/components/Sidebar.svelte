@@ -2,12 +2,14 @@
 	import type { Activity } from '$lib/types';
 	import { settings } from '$lib/stores/settings';
 	import { TrendingUp, TrendingDown, Clock, Target, Calendar } from '@lucide/svelte';
+	import type { HeatmapDay } from '$lib/api';
 
 	interface Props {
 		activities: Activity[];
+		heatmapData: HeatmapDay[];
 	}
 
-	let { activities }: Props = $props();
+	let { activities, heatmapData }: Props = $props();
 
 	interface ROIBreakdown {
 		High: number;
@@ -41,89 +43,61 @@
 
 	const totalHours = $derived(roiBreakdown.High + roiBreakdown.Neutral + roiBreakdown.Waste);
 
-	// Calendar data - static mock data for visualization
-	const currentDate = new Date();
-	const currentMonth = currentDate.getMonth();
-	const currentYear = currentDate.getFullYear();
+	// Build calendar days from heatmap data
+	const calendarDays = $derived.by(() => {
+		const currentDate = new Date();
+		const days: Array<{
+			day: number;
+			month: string;
+			status: string | null;
+			isToday?: boolean;
+			dateKey: string;
+		}> = [];
 
-	// Mock data: status for each day (green = positive, red = negative, gray = neutral/no data)
-	const mockDayStatus: Record<string, 'positive' | 'negative' | 'neutral'> = {
-		'2025-09-04': 'positive',
-		'2025-09-05': 'positive',
-		'2025-09-06': 'negative',
-		'2025-09-07': 'positive',
-		'2025-09-08': 'neutral',
-		'2025-09-09': 'neutral',
-		'2025-09-10': 'neutral',
-		'2025-09-11': 'positive',
-		'2025-09-12': 'positive',
-		'2025-09-13': 'negative',
-		'2025-09-14': 'positive',
-		'2025-09-15': 'positive',
-		'2025-09-16': 'neutral',
-		'2025-09-17': 'neutral',
-		'2025-09-18': 'positive',
-		'2025-09-19': 'negative',
-		'2025-09-20': 'positive',
-		'2025-09-21': 'positive',
-		'2025-09-22': 'positive',
-		'2025-09-23': 'neutral',
-		'2025-09-24': 'neutral',
-		'2025-09-25': 'positive',
-		'2025-09-26': 'negative',
-		'2025-09-27': 'positive',
-		'2025-09-28': 'positive',
-		'2025-09-29': 'neutral',
-		'2025-09-30': 'neutral',
-		'2025-10-01': 'positive',
-		'2025-10-02': 'positive',
-		'2025-10-03': 'positive'
-	};
+		// Calculate the date 30 days ago
+		const thirtyDaysAgo = new Date(currentDate);
+		thirtyDaysAgo.setDate(currentDate.getDate() - 29); // -29 to include today
 
-	// Build last 30 days calendar grid
-	const calendarDays: Array<{
-		day: number;
-		month: string;
-		status: string | null;
-		isToday?: boolean;
-		dateKey: string;
-	}> = [];
+		// Get the day of week for 30 days ago to align the grid
+		const startDayOfWeek = thirtyDaysAgo.getDay();
 
-	// Calculate the date 30 days ago
-	const thirtyDaysAgo = new Date(currentDate);
-	thirtyDaysAgo.setDate(currentDate.getDate() - 29); // -29 to include today
+		// Create a map of dates to statuses
+		const statusMap = new Map<string, 'positive' | 'negative' | 'neutral'>();
+		for (const day of heatmapData) {
+			statusMap.set(day.date, day.status);
+		}
 
-	// Get the day of week for 30 days ago to align the grid
-	const startDayOfWeek = thirtyDaysAgo.getDay();
+		// Add empty cells to align with the correct day of week
+		for (let i = 0; i < startDayOfWeek; i++) {
+			const emptyDate = new Date(thirtyDaysAgo);
+			emptyDate.setDate(thirtyDaysAgo.getDate() - (startDayOfWeek - i));
+			const dateKey = `${emptyDate.getFullYear()}-${String(emptyDate.getMonth() + 1).padStart(2, '0')}-${String(emptyDate.getDate()).padStart(2, '0')}`;
+			days.push({
+				day: emptyDate.getDate(),
+				month: emptyDate.toLocaleDateString('en-US', { month: 'short' }),
+				status: null,
+				dateKey
+			});
+		}
 
-	// Add empty cells to align with the correct day of week
-	for (let i = 0; i < startDayOfWeek; i++) {
-		const emptyDate = new Date(thirtyDaysAgo);
-		emptyDate.setDate(thirtyDaysAgo.getDate() - (startDayOfWeek - i));
-		const dateKey = `${emptyDate.getFullYear()}-${String(emptyDate.getMonth() + 1).padStart(2, '0')}-${String(emptyDate.getDate()).padStart(2, '0')}`;
-		calendarDays.push({
-			day: emptyDate.getDate(),
-			month: emptyDate.toLocaleDateString('en-US', { month: 'short' }),
-			status: null,
-			dateKey
-		});
-	}
+		// Add the last 30 days
+		for (let i = 0; i < 30; i++) {
+			const date = new Date(thirtyDaysAgo);
+			date.setDate(thirtyDaysAgo.getDate() + i);
+			const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+			const isToday = date.toDateString() === currentDate.toDateString();
 
-	// Add the last 30 days
-	for (let i = 0; i < 30; i++) {
-		const date = new Date(thirtyDaysAgo);
-		date.setDate(thirtyDaysAgo.getDate() + i);
-		const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-		const isToday = date.toDateString() === currentDate.toDateString();
+			days.push({
+				day: date.getDate(),
+				month: date.toLocaleDateString('en-US', { month: 'short' }),
+				status: statusMap.get(dateKey) || 'neutral',
+				isToday,
+				dateKey
+			});
+		}
 
-		calendarDays.push({
-			day: date.getDate(),
-			month: date.toLocaleDateString('en-US', { month: 'short' }),
-			status: mockDayStatus[dateKey] || 'neutral',
-			isToday,
-			dateKey
-		});
-	}
+		return days;
+	});
 
 	function getDuration(activity: Activity): number {
 		const start = timeToMinutes(activity.startTime);
