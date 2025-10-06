@@ -112,14 +112,13 @@ func (h *AuthHandler) Callback(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create session")
 	}
 
-	// Set cookie
+	// Set cookie (no SameSite for localhost development compatibility)
 	c.SetCookie(&http.Cookie{
 		Name:     "session_token",
 		Value:    session.Token,
 		Expires:  session.ExpiresAt,
 		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
-		SameSite: http.SameSiteLaxMode,
+		Secure:   false,
 		Path:     "/",
 	})
 
@@ -154,6 +153,7 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 		Value:    "",
 		Expires:  time.Now().Add(-1 * time.Hour),
 		HttpOnly: true,
+		Secure:   false,
 		Path:     "/",
 	})
 

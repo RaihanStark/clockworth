@@ -24,17 +24,12 @@ function createAuthStore() {
 
 			update(state => ({ ...state, loading: true }));
 
-			const token = localStorage.getItem('session_token');
-			if (token) {
-				try {
-					const user = await api.getMe();
-					set({ user, loading: false, initialized: true });
-				} catch (error) {
-					console.error('Failed to get user:', error);
-					localStorage.removeItem('session_token');
-					set({ user: null, loading: false, initialized: true });
-				}
-			} else {
+			// Try to fetch user - cookie is sent automatically via credentials: 'include'
+			try {
+				const user = await api.getMe();
+				set({ user, loading: false, initialized: true });
+			} catch (error) {
+				// No valid session
 				set({ user: null, loading: false, initialized: true });
 			}
 		},
@@ -51,10 +46,10 @@ function createAuthStore() {
 			}
 		},
 
-		async setToken(token: string) {
+		async setToken(_token: string) {
 			if (!browser) return;
 
-			localStorage.setItem('session_token', token);
+			// Cookie is already set by backend, just fetch user info
 			update(state => ({ ...state, loading: true }));
 
 			try {
@@ -63,7 +58,6 @@ function createAuthStore() {
 				goto('/dashboard');
 			} catch (error) {
 				console.error('Failed to get user:', error);
-				localStorage.removeItem('session_token');
 				set({ user: null, loading: false, initialized: true });
 				throw error;
 			}
@@ -76,9 +70,7 @@ function createAuthStore() {
 				console.error('Failed to logout:', error);
 			}
 
-			if (browser) {
-				localStorage.removeItem('session_token');
-			}
+			// Cookie is cleared by backend
 			set({ user: null, loading: false, initialized: true });
 			goto('/login');
 		},

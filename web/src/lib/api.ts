@@ -67,10 +67,8 @@ class ApiClient {
 			'Content-Type': 'application/json'
 		};
 
-		const token = localStorage.getItem('session_token');
-		if (token) {
-			headers['Authorization'] = `Bearer ${token}`;
-		}
+		// Cookie is automatically sent with credentials: 'include'
+		// No need to manually set Authorization header
 
 		return headers;
 	}
@@ -122,7 +120,7 @@ class ApiClient {
 			throw new Error('Failed to logout');
 		}
 
-		localStorage.removeItem('session_token');
+		// Cookie is cleared by the backend
 	}
 
 	async getSettings(): Promise<SettingsResponse> {
