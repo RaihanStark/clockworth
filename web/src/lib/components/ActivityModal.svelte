@@ -26,7 +26,6 @@
 		onActivityDeleted
 	}: Props = $props();
 
-	let isOpen = $state(true);
 	let modalElement: HTMLDivElement;
 	let firstFocusable: HTMLElement;
 
@@ -163,8 +162,7 @@
 	}
 
 	function closeModal() {
-		isOpen = false;
-		setTimeout(onClose, 200); // Allow animation to complete
+		onClose();
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -205,19 +203,19 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div
-	class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm transition-opacity duration-300 {isOpen
-		? 'opacity-100'
-		: 'opacity-0'}"
+	class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+	style="will-change: contents;"
 	onclick={handleBackdropClick}
+	onkeydown={(e) => e.key === 'Enter' && closeModal()}
 	role="dialog"
 	aria-modal="true"
 	aria-labelledby="modal-title"
+	tabindex="-1"
 >
 	<div
 		bind:this={modalElement}
-		class="w-full max-w-lg transform overflow-hidden rounded-3xl bg-white shadow-2xl transition-all duration-300 {isOpen
-			? 'scale-100 opacity-100'
-			: 'scale-90 opacity-0'}"
+		class="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"
+		style="will-change: contents;"
 	>
 		<!-- Header -->
 		<div

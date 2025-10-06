@@ -100,7 +100,11 @@
 	</header>
 
 	<!-- Content -->
-	<div class="h-[calc(100vh-150px)] lg:h-[calc(100vh-96px)]">
+	<div
+		class="h-[calc(100vh-150px)] lg:h-[calc(100vh-96px)]"
+		class:pointer-events-none={showModal}
+		inert={showModal}
+	>
 		<!-- Large Desktop Layout: Side by Side (1536px+) -->
 		<div class="hidden h-full xl:block">
 			<div class="flex h-full gap-6 px-6 py-6">
