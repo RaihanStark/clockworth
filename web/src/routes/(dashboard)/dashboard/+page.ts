@@ -5,7 +5,10 @@ export const load: PageLoad = async () => {
 	const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
 	try {
-		const apiActivities = await api.getActivities(today);
+		const [apiActivities, heatmapData] = await Promise.all([
+			api.getActivities(today),
+			api.getHeatmap()
+		]);
 
 		// Convert API activities to frontend format
 		const activities = apiActivities.map((a) => ({
@@ -19,12 +22,14 @@ export const load: PageLoad = async () => {
 
 		return {
 			activities,
+			heatmapData,
 			date: today
 		};
 	} catch (error) {
 		console.error('Failed to load activities:', error);
 		return {
 			activities: [],
+			heatmapData: [],
 			date: today
 		};
 	}
