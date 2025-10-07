@@ -102,6 +102,18 @@ class ApiClient {
 		});
 
 		if (!response.ok) {
+			// 408 = Request cancelled (page refresh) - treat as retryable
+			if (response.status === 408) {
+				throw new Error('REQUEST_CANCELLED');
+			}
+			// 401 = Not authenticated
+			if (response.status === 401) {
+				throw new Error('UNAUTHORIZED');
+			}
+			// For 500+ errors, throw a different error so we can retry
+			if (response.status >= 500) {
+				throw new Error('SERVER_ERROR');
+			}
 			throw new Error('Failed to get user info');
 		}
 

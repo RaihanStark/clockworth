@@ -42,13 +42,30 @@ function createAuthStore() {
 			initPromise = (async () => {
 				update(state => ({ ...state, loading: true }));
 
-				// Try to fetch user - cookie is sent automatically via credentials: 'include'
-				try {
-					const user = await api.getMe();
-					set({ user, loading: false, initialized: true });
-				} catch (error) {
-					// No valid session
-					set({ user: null, loading: false, initialized: true });
+				// Retry logic for server errors
+				let retries = 3;
+				let delay = 300; // Start with 300ms
+
+				while (retries > 0) {
+					try {
+						const user = await api.getMe();
+						set({ user, loading: false, initialized: true });
+						return;
+					} catch (error) {
+						const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+						// If it's a server error or cancelled request and we have retries left, retry
+						if ((errorMessage === 'SERVER_ERROR' || errorMessage === 'REQUEST_CANCELLED') && retries > 1) {
+							retries--;
+							await new Promise(resolve => setTimeout(resolve, delay));
+							delay *= 2; // Exponential backoff
+							continue;
+						}
+
+						// For UNAUTHORIZED or any other error after retries, treat as no session
+						set({ user: null, loading: false, initialized: true });
+						return;
+					}
 				}
 			})();
 

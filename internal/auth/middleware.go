@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"context"
 	"database/sql"
+	"log"
 	"net/http"
 	"strings"
 
@@ -12,6 +14,13 @@ import (
 type contextKey string
 
 const UserContextKey contextKey = "user"
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
 
 func AuthMiddleware(queries *database.Queries) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -35,6 +44,13 @@ func AuthMiddleware(queries *database.Queries) echo.MiddlewareFunc {
 				if err == sql.ErrNoRows {
 					return echo.NewHTTPError(http.StatusUnauthorized, "invalid or expired session")
 				}
+				// Check if request was cancelled (e.g., user refreshed page)
+				if err == context.Canceled {
+					log.Printf("Auth middleware: request cancelled for token %s...", token[:min(8, len(token))])
+					return echo.NewHTTPError(http.StatusRequestTimeout, "request cancelled")
+				}
+				// Log the actual error for debugging
+				log.Printf("Auth middleware: database error for token %s...: %v", token[:min(8, len(token))], err)
 				return echo.NewHTTPError(http.StatusInternalServerError, "failed to validate session")
 			}
 
@@ -44,6 +60,13 @@ func AuthMiddleware(queries *database.Queries) echo.MiddlewareFunc {
 				if err == sql.ErrNoRows {
 					return echo.NewHTTPError(http.StatusUnauthorized, "user not found")
 				}
+				// Check if request was cancelled
+				if err == context.Canceled {
+					log.Printf("Auth middleware: request cancelled while fetching user")
+					return echo.NewHTTPError(http.StatusRequestTimeout, "request cancelled")
+				}
+				// Log the actual error for debugging
+				log.Printf("Auth middleware: failed to get user %s: %v", session.UserID, err)
 				return echo.NewHTTPError(http.StatusInternalServerError, "failed to get user")
 			}
 

@@ -32,9 +32,16 @@ func main() {
 	}
 	defer db.Close()
 
+	// Configure connection pool to handle concurrent requests
+	db.SetMaxOpenConns(25)                  // Maximum number of open connections
+	db.SetMaxIdleConns(5)                   // Maximum number of idle connections
+	db.SetConnMaxLifetime(5 * 60 * 1000000000) // 5 minutes
+
 	if err := db.Ping(); err != nil {
 		log.Fatal("failed to ping database:", err)
 	}
+
+	log.Println("Database connection pool configured: max_open=25, max_idle=5")
 
 	// Initialize database queries
 	queries := database.New(db)
