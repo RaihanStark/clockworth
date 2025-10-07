@@ -16,22 +16,43 @@ function createAuthStore() {
 		initialized: false
 	});
 
+	let initPromise: Promise<void> | null = null;
+
 	return {
 		subscribe,
 
 		async init() {
 			if (!browser) return;
 
-			update(state => ({ ...state, loading: true }));
+			// Get current state to check if already initialized
+			let currentState: AuthState;
+			const unsubscribe = subscribe(state => { currentState = state; })();
 
-			// Try to fetch user - cookie is sent automatically via credentials: 'include'
-			try {
-				const user = await api.getMe();
-				set({ user, loading: false, initialized: true });
-			} catch (error) {
-				// No valid session
-				set({ user: null, loading: false, initialized: true });
+			// If already initialized, skip
+			if (currentState!.initialized) {
+				return;
 			}
+
+			// If already initializing, return the existing promise
+			if (initPromise) {
+				return initPromise;
+			}
+
+			// Create new initialization promise
+			initPromise = (async () => {
+				update(state => ({ ...state, loading: true }));
+
+				// Try to fetch user - cookie is sent automatically via credentials: 'include'
+				try {
+					const user = await api.getMe();
+					set({ user, loading: false, initialized: true });
+				} catch (error) {
+					// No valid session
+					set({ user: null, loading: false, initialized: true });
+				}
+			})();
+
+			await initPromise;
 		},
 
 		async login() {
@@ -76,6 +97,7 @@ function createAuthStore() {
 		},
 
 		reset() {
+			initPromise = null;
 			set({ user: null, loading: false, initialized: false });
 		}
 	};

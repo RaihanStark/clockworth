@@ -9,17 +9,14 @@ export const ssr = false; // Disable SSR for auth pages
 export const load: LayoutLoad = async () => {
 	if (!browser) return {};
 
+	// Always ensure auth is initialized (safe to call multiple times)
+	await authStore.init();
+
+	// Get the current auth state
 	const auth = get(authStore);
 
-	// Wait for auth to initialize if not yet done
-	if (!auth.initialized) {
-		await authStore.init();
-	}
-
-	const updatedAuth = get(authStore);
-
 	// Redirect to dashboard if already logged in
-	if (updatedAuth.user) {
+	if (auth.user) {
 		throw redirect(307, '/dashboard');
 	}
 
