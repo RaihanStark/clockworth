@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/RaihanStark/clockworth/internal/auth"
 	"github.com/RaihanStark/clockworth/internal/config"
@@ -32,16 +33,17 @@ func main() {
 	}
 	defer db.Close()
 
-	// Configure connection pool to handle concurrent requests
-	db.SetMaxOpenConns(25)                  // Maximum number of open connections
-	db.SetMaxIdleConns(5)                   // Maximum number of idle connections
-	db.SetConnMaxLifetime(5 * 60 * 1000000000) // 5 minutes
+	// Configure connection pool optimized for production with network latency
+	db.SetMaxOpenConns(50)                          // Increased for production load
+	db.SetMaxIdleConns(10)                          // Keep more connections ready
+	db.SetConnMaxLifetime(10 * time.Minute)         // Longer lifetime for remote DB
+	db.SetConnMaxIdleTime(5 * time.Minute)          // Close idle connections after 5 min
 
 	if err := db.Ping(); err != nil {
 		log.Fatal("failed to ping database:", err)
 	}
 
-	log.Println("Database connection pool configured: max_open=25, max_idle=5")
+	log.Println("Database connection pool configured: max_open=50, max_idle=10")
 
 	// Initialize database queries
 	queries := database.New(db)

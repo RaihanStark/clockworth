@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/RaihanStark/clockworth/internal/database"
 	"github.com/labstack/echo/v4"
@@ -38,8 +39,12 @@ func AuthMiddleware(queries *database.Queries) echo.MiddlewareFunc {
 			// Remove "Bearer " prefix if present
 			token := strings.TrimPrefix(authHeader, "Bearer ")
 
+			// Create timeout context for database queries (5 seconds for production)
+			ctx, cancel := context.WithTimeout(c.Request().Context(), 5*time.Second)
+			defer cancel()
+
 			// Get session from database
-			session, err := queries.GetSessionByToken(c.Request().Context(), token)
+			session, err := queries.GetSessionByToken(ctx, token)
 			if err != nil {
 				if err == sql.ErrNoRows {
 					return echo.NewHTTPError(http.StatusUnauthorized, "invalid or expired session")
@@ -49,13 +54,18 @@ func AuthMiddleware(queries *database.Queries) echo.MiddlewareFunc {
 					log.Printf("Auth middleware: request cancelled for token %s...", token[:min(8, len(token))])
 					return echo.NewHTTPError(http.StatusRequestTimeout, "request cancelled")
 				}
+				// Check if query timed out (network latency in production)
+				if err == context.DeadlineExceeded {
+					log.Printf("Auth middleware: query timeout for token %s... (check database connection)", token[:min(8, len(token))])
+					return echo.NewHTTPError(http.StatusServiceUnavailable, "database timeout")
+				}
 				// Log the actual error for debugging
 				log.Printf("Auth middleware: database error for token %s...: %v", token[:min(8, len(token))], err)
 				return echo.NewHTTPError(http.StatusInternalServerError, "failed to validate session")
 			}
 
-			// Get user from database
-			user, err := queries.GetUserByID(c.Request().Context(), session.UserID)
+			// Get user from database (reuse same timeout context)
+			user, err := queries.GetUserByID(ctx, session.UserID)
 			if err != nil {
 				if err == sql.ErrNoRows {
 					return echo.NewHTTPError(http.StatusUnauthorized, "user not found")
@@ -64,6 +74,11 @@ func AuthMiddleware(queries *database.Queries) echo.MiddlewareFunc {
 				if err == context.Canceled {
 					log.Printf("Auth middleware: request cancelled while fetching user")
 					return echo.NewHTTPError(http.StatusRequestTimeout, "request cancelled")
+				}
+				// Check if query timed out
+				if err == context.DeadlineExceeded {
+					log.Printf("Auth middleware: query timeout while fetching user %s", session.UserID)
+					return echo.NewHTTPError(http.StatusServiceUnavailable, "database timeout")
 				}
 				// Log the actual error for debugging
 				log.Printf("Auth middleware: failed to get user %s: %v", session.UserID, err)

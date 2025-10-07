@@ -38,8 +38,8 @@ function createAuthStore() {
 				return initPromise;
 			}
 
-			// Create new initialization promise
-			initPromise = (async () => {
+			// Create and assign promise atomically to prevent race condition
+			return await (initPromise = (async () => {
 				update(state => ({ ...state, loading: true }));
 
 				// Retry logic for server errors
@@ -54,8 +54,9 @@ function createAuthStore() {
 					} catch (error) {
 						const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-						// If it's a server error or cancelled request and we have retries left, retry
-						if ((errorMessage === 'SERVER_ERROR' || errorMessage === 'REQUEST_CANCELLED') && retries > 1) {
+						// If it's a retryable error and we have retries left, retry
+						const retryableErrors = ['SERVER_ERROR', 'REQUEST_CANCELLED', 'SERVICE_UNAVAILABLE'];
+						if (retryableErrors.includes(errorMessage) && retries > 1) {
 							retries--;
 							await new Promise(resolve => setTimeout(resolve, delay));
 							delay *= 2; // Exponential backoff
@@ -67,9 +68,7 @@ function createAuthStore() {
 						return;
 					}
 				}
-			})();
-
-			await initPromise;
+			})());
 		},
 
 		async login() {

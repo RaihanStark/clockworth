@@ -1,14 +1,12 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import '../app.css';
 	import favicon from '$lib/assets/favicon.svg';
-	import { authStore } from '$lib/stores/auth';
 
 	let { children } = $props();
 
-	onMount(() => {
-		authStore.init();
-	});
+	// Auth initialization is handled by route-specific layouts
+	// (dashboard)/+layout.ts for protected routes
+	// (auth)/+layout.ts for auth routes
 </script>
 
 <svelte:head>

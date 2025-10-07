@@ -110,6 +110,10 @@ class ApiClient {
 			if (response.status === 401) {
 				throw new Error('UNAUTHORIZED');
 			}
+			// 503 = Service unavailable (database timeout) - treat as retryable
+			if (response.status === 503) {
+				throw new Error('SERVICE_UNAVAILABLE');
+			}
 			// For 500+ errors, throw a different error so we can retry
 			if (response.status >= 500) {
 				throw new Error('SERVER_ERROR');
