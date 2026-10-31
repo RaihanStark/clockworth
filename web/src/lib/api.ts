@@ -94,6 +94,54 @@ class ApiClient {
 		return data.url;
 	}
 
+	async loginWithEmail(email: string, password: string): Promise<User> {
+		const response = await fetch(`${this.baseUrl}/auth/login`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			credentials: 'include',
+			body: JSON.stringify({ email, password })
+		});
+
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => ({ message: 'Failed to sign in' }));
+			throw new Error(errorData.message || 'Failed to sign in');
+		}
+
+		const data = await response.json();
+		return {
+			id: data.user.id,
+			email: data.user.email,
+			name: data.user.name,
+			picture: data.user.picture
+		};
+	}
+
+	async registerWithEmail(email: string, password: string, name?: string): Promise<User> {
+		const response = await fetch(`${this.baseUrl}/auth/register`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			credentials: 'include',
+			body: JSON.stringify({ email, password, name })
+		});
+
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => ({ message: 'Failed to create account' }));
+			throw new Error(errorData.message || 'Failed to create account');
+		}
+
+		const data = await response.json();
+		return {
+			id: data.user.id,
+			email: data.user.email,
+			name: data.user.name,
+			picture: data.user.picture
+		};
+	}
+
 	async getMe(): Promise<User> {
 		const response = await fetch(`${this.baseUrl}/api/me`, {
 			method: 'GET',

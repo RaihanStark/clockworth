@@ -12,6 +12,11 @@ INSERT INTO users (email, name, picture, google_id)
 VALUES ($1, $2, $3, $4)
 RETURNING *;
 
+-- name: CreateEmailUser :one
+INSERT INTO users (email, name, password_hash)
+VALUES ($1, $2, $3)
+RETURNING *;
+
 -- name: UpdateUser :one
 UPDATE users
 SET name = $2, picture = $3, updated_at = CURRENT_TIMESTAMP

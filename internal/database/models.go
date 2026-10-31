@@ -37,12 +37,13 @@ type Session struct {
 }
 
 type User struct {
-	ID          uuid.UUID      `json:"id"`
-	Email       string         `json:"email"`
-	Name        sql.NullString `json:"name"`
-	Picture     sql.NullString `json:"picture"`
-	GoogleID    string         `json:"google_id"`
-	CreatedAt   sql.NullTime   `json:"created_at"`
-	UpdatedAt   sql.NullTime   `json:"updated_at"`
-	HourlyWorth float64        `json:"hourly_worth"`
+	ID           uuid.UUID      `json:"id"`
+	Email        string         `json:"email"`
+	Name         sql.NullString `json:"name"`
+	Picture      sql.NullString `json:"picture"`
+	GoogleID     sql.NullString `json:"google_id"`
+	CreatedAt    sql.NullTime   `json:"created_at"`
+	UpdatedAt    sql.NullTime   `json:"updated_at"`
+	HourlyWorth  float64        `json:"hourly_worth"`
+	PasswordHash sql.NullString `json:"password_hash"`
 }

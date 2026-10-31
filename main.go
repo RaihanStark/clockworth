@@ -75,6 +75,8 @@ func main() {
 
 	// Public routes
 	e.GET("/health", healthCheck)
+	e.POST("/auth/register", authHandler.Register)
+	e.POST("/auth/login", authHandler.EmailLogin)
 	e.GET("/auth/google/login", authHandler.Login)
 	e.GET("/auth/google/callback", authHandler.Callback)
 

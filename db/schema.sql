@@ -63,10 +63,11 @@ CREATE TABLE public.users (
     email character varying(255) NOT NULL,
     name character varying(255),
     picture text,
-    google_id character varying(255) NOT NULL,
+    google_id character varying(255),
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    hourly_worth numeric(10,2) DEFAULT 0.00
+    hourly_worth numeric(10,2) DEFAULT 0.00,
+    password_hash character varying(255)
 );
 
 
@@ -219,4 +220,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20251005'),
     ('20251006'),
     ('20251007'),
-    ('20251008');
+    ('20251008'),
+    ('20251009');

@@ -12,17 +12,46 @@ import (
 	"github.com/google/uuid"
 )
 
+const createEmailUser = `-- name: CreateEmailUser :one
+INSERT INTO users (email, name, password_hash)
+VALUES ($1, $2, $3)
+RETURNING id, email, name, picture, google_id, created_at, updated_at, hourly_worth, password_hash
+`
+
+type CreateEmailUserParams struct {
+	Email        string         `json:"email"`
+	Name         sql.NullString `json:"name"`
+	PasswordHash sql.NullString `json:"password_hash"`
+}
+
+func (q *Queries) CreateEmailUser(ctx context.Context, arg CreateEmailUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createEmailUser, arg.Email, arg.Name, arg.PasswordHash)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Picture,
+		&i.GoogleID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.HourlyWorth,
+		&i.PasswordHash,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (email, name, picture, google_id)
 VALUES ($1, $2, $3, $4)
-RETURNING id, email, name, picture, google_id, created_at, updated_at, hourly_worth
+RETURNING id, email, name, picture, google_id, created_at, updated_at, hourly_worth, password_hash
 `
 
 type CreateUserParams struct {
 	Email    string         `json:"email"`
 	Name     sql.NullString `json:"name"`
 	Picture  sql.NullString `json:"picture"`
-	GoogleID string         `json:"google_id"`
+	GoogleID sql.NullString `json:"google_id"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -42,12 +71,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HourlyWorth,
+		&i.PasswordHash,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, picture, google_id, created_at, updated_at, hourly_worth FROM users WHERE email = $1 LIMIT 1
+SELECT id, email, name, picture, google_id, created_at, updated_at, hourly_worth, password_hash FROM users WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -62,15 +92,16 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HourlyWorth,
+		&i.PasswordHash,
 	)
 	return i, err
 }
 
 const getUserByGoogleID = `-- name: GetUserByGoogleID :one
-SELECT id, email, name, picture, google_id, created_at, updated_at, hourly_worth FROM users WHERE google_id = $1 LIMIT 1
+SELECT id, email, name, picture, google_id, created_at, updated_at, hourly_worth, password_hash FROM users WHERE google_id = $1 LIMIT 1
 `
 
-func (q *Queries) GetUserByGoogleID(ctx context.Context, googleID string) (User, error) {
+func (q *Queries) GetUserByGoogleID(ctx context.Context, googleID sql.NullString) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUserByGoogleID, googleID)
 	var i User
 	err := row.Scan(
@@ -82,12 +113,13 @@ func (q *Queries) GetUserByGoogleID(ctx context.Context, googleID string) (User,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HourlyWorth,
+		&i.PasswordHash,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, name, picture, google_id, created_at, updated_at, hourly_worth FROM users WHERE id = $1 LIMIT 1
+SELECT id, email, name, picture, google_id, created_at, updated_at, hourly_worth, password_hash FROM users WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
@@ -102,6 +134,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HourlyWorth,
+		&i.PasswordHash,
 	)
 	return i, err
 }
@@ -110,7 +143,7 @@ const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET name = $2, picture = $3, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
-RETURNING id, email, name, picture, google_id, created_at, updated_at, hourly_worth
+RETURNING id, email, name, picture, google_id, created_at, updated_at, hourly_worth, password_hash
 `
 
 type UpdateUserParams struct {
@@ -131,6 +164,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HourlyWorth,
+		&i.PasswordHash,
 	)
 	return i, err
 }
@@ -139,7 +173,7 @@ const updateUserHourlyWorth = `-- name: UpdateUserHourlyWorth :one
 UPDATE users
 SET hourly_worth = $2, updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
-RETURNING id, email, name, picture, google_id, created_at, updated_at, hourly_worth
+RETURNING id, email, name, picture, google_id, created_at, updated_at, hourly_worth, password_hash
 `
 
 type UpdateUserHourlyWorthParams struct {
@@ -159,6 +193,7 @@ func (q *Queries) UpdateUserHourlyWorth(ctx context.Context, arg UpdateUserHourl
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HourlyWorth,
+		&i.PasswordHash,
 	)
 	return i, err
 }

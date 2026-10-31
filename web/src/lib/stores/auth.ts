@@ -83,6 +83,30 @@ function createAuthStore() {
 			}
 		},
 
+		async loginWithEmail(email: string, password: string) {
+			update(state => ({ ...state, loading: true }));
+			try {
+				const user = await api.loginWithEmail(email, password);
+				set({ user, loading: false, initialized: true });
+				goto('/dashboard');
+			} catch (error) {
+				update(state => ({ ...state, loading: false }));
+				throw error;
+			}
+		},
+
+		async registerWithEmail(email: string, password: string, name?: string) {
+			update(state => ({ ...state, loading: true }));
+			try {
+				const user = await api.registerWithEmail(email, password, name);
+				set({ user, loading: false, initialized: true });
+				goto('/dashboard');
+			} catch (error) {
+				update(state => ({ ...state, loading: false }));
+				throw error;
+			}
+		},
+
 		async setToken(_token: string) {
 			if (!browser) return;
 
