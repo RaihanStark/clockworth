@@ -2,7 +2,8 @@ import { api } from '$lib/api';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async () => {
-	const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+	const now = new Date();
+	const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; // YYYY-MM-DD in local time
 
 	// Retry helper for transient failures
 	async function fetchWithRetry<T>(
